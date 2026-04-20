@@ -59,13 +59,22 @@ def _make_tray_image():
     return draw_icon(64)
 
 
+def _shutdown(icon) -> None:
+    try:
+        icon.stop()
+    finally:
+        time.sleep(0.2)
+        os._exit(0)
+
+
 def _idle_watcher(icon, timeout_minutes: int) -> None:
     timeout_sec = timeout_minutes * 60
+    check_interval = max(5, min(60, timeout_sec // 2))
     while True:
-        time.sleep(60)
+        time.sleep(check_interval)
         if time.monotonic() - get_last_activity() > timeout_sec:
-            icon.stop()
-            os._exit(0)
+            _shutdown(icon)
+            return
 
 
 def main() -> None:
@@ -80,8 +89,7 @@ def main() -> None:
         webbrowser.open(f'http://127.0.0.1:{port}')
 
     def on_quit(icon, item):
-        icon.stop()
-        os._exit(0)
+        _shutdown(icon)
 
     icon = pystray.Icon(
         'Cadence',

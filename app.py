@@ -101,14 +101,18 @@ def _calculate_age(birthday_str):
         return None
 
 
+def _parse_services(services_str):
+    try:
+        return json.loads(services_str or '[]')
+    except (TypeError, ValueError):
+        return []
+
+
 def _enrich_student(row):
     if row is None:
         return None
     d = dict(row)
-    try:
-        d['services_list'] = json.loads(d.get('services') or '[]')
-    except Exception:
-        d['services_list'] = []
+    d['services_list'] = _parse_services(d.get('services'))
     d['age'] = _calculate_age(d.get('birthday'))
     return d
 
@@ -356,10 +360,7 @@ def edit_client(client_id):
     if not d['name'] or not d['initials']:
         flash('Name and initials are required.', 'error')
         d['id'] = client_id
-        try:
-            d['services_list'] = json.loads(d.get('services') or '[]')
-        except Exception:
-            d['services_list'] = []
+        d['services_list'] = _parse_services(d.get('services'))
         d['age'] = _calculate_age(d.get('birthday'))
         return render_template('student_form.html',
             student=d, services=SERVICES, grades=GRADES)
@@ -386,27 +387,25 @@ def edit_client(client_id):
     return redirect(url_for('clients'))
 
 
-@app.route('/clients/<int:client_id>/archive', methods=['POST'])
-def archive_client(client_id):
+def _set_client_active(client_id, active, flash_template):
     conn = get_db()
-    conn.execute('UPDATE clients SET active=0 WHERE id=?', (client_id,))
+    conn.execute('UPDATE clients SET active=? WHERE id=?', (active, client_id))
     conn.commit()
     name = conn.execute('SELECT name FROM clients WHERE id=?', (client_id,)).fetchone()
     conn.close()
     if name:
-        flash(f'"{name["name"]}" archived. Restore them from the Archived section.', 'success')
+        flash(flash_template.format(name=name['name']), 'success')
+
+
+@app.route('/clients/<int:client_id>/archive', methods=['POST'])
+def archive_client(client_id):
+    _set_client_active(client_id, 0, '"{name}" archived. Restore them from the Archived section.')
     return redirect(url_for('clients'))
 
 
 @app.route('/clients/<int:client_id>/restore', methods=['POST'])
 def restore_client(client_id):
-    conn = get_db()
-    conn.execute('UPDATE clients SET active=1 WHERE id=?', (client_id,))
-    conn.commit()
-    name = conn.execute('SELECT name FROM clients WHERE id=?', (client_id,)).fetchone()
-    conn.close()
-    if name:
-        flash(f'"{name["name"]}" restored to active students.', 'success')
+    _set_client_active(client_id, 1, '"{name}" restored to active students.')
     return redirect(url_for('clients'))
 
 
@@ -794,13 +793,12 @@ def save_storage():
     current = _config.load()
     old_db  = current['db_path']
 
-    # Auto-migrate database to new location if it doesn't exist there yet
     if new_db and new_db != old_db:
         try:
             os.makedirs(os.path.dirname(os.path.abspath(new_db)), exist_ok=True)
             if os.path.exists(old_db) and not os.path.exists(new_db):
                 shutil.copy2(old_db, new_db)
-        except Exception as e:
+        except OSError as e:
             flash(f'Could not move database: {e}', 'error')
             return redirect(url_for('settings'))
 

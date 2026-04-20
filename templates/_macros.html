@@ -1,0 +1,8 @@
+{% macro nav_link(endpoint, label, active_endpoints=None) %}
+  {%- set active_set = active_endpoints if active_endpoints else [endpoint] -%}
+  <a href="{{ url_for(endpoint) }}"
+     class="nav-link {% if request.endpoint in active_set %}active{% endif %}">
+    {{ caller() }}
+    {{ label }}
+  </a>
+{% endmacro %}

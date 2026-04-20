@@ -87,9 +87,15 @@ def init_db():
             note           TEXT,
             FOREIGN KEY (invoice_id) REFERENCES invoices(id)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_invoices_client_id     ON invoices(client_id);
+        CREATE INDEX IF NOT EXISTS idx_invoices_year_month    ON invoices(year, month);
+        CREATE INDEX IF NOT EXISTS idx_invoices_paid          ON invoices(paid);
+        CREATE INDEX IF NOT EXISTS idx_invoice_lines_invoice  ON invoice_lines(invoice_id);
+        CREATE INDEX IF NOT EXISTS idx_clients_active         ON clients(active);
+        CREATE INDEX IF NOT EXISTS idx_calendars_enabled      ON calendars(enabled);
     ''')
 
-    # Migrate existing DBs — add columns that may not exist yet
     client_migrations = [
         ('school',          'TEXT'),
         ('grade',           'TEXT'),
@@ -112,29 +118,18 @@ def init_db():
         ('active',          'INTEGER DEFAULT 1'),
         ('hourly_rate',     'REAL'),
     ]
-    for col, defn in client_migrations:
-        try:
-            conn.execute(f'ALTER TABLE clients ADD COLUMN {col} {defn}')
-        except Exception:
-            pass
+    def _add_columns(table, columns):
+        for col, defn in columns:
+            try:
+                conn.execute(f'ALTER TABLE {table} ADD COLUMN {col} {defn}')
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
 
-    for col, defn in [('graph_id', 'TEXT')]:
-        try:
-            conn.execute(f'ALTER TABLE calendars ADD COLUMN {col} {defn}')
-        except Exception:
-            pass
-
-    for col, defn in [('paid', 'INTEGER DEFAULT 0'), ('paid_at', 'TEXT')]:
-        try:
-            conn.execute(f'ALTER TABLE invoices ADD COLUMN {col} {defn}')
-        except Exception:
-            pass
-
-    for col, defn in [("line_type", "TEXT NOT NULL DEFAULT 'session'"), ("note", "TEXT")]:
-        try:
-            conn.execute(f"ALTER TABLE invoice_lines ADD COLUMN {col} {defn}")
-        except Exception:
-            pass
+    _add_columns('clients', client_migrations)
+    _add_columns('calendars', [('graph_id', 'TEXT')])
+    _add_columns('invoices', [('paid', 'INTEGER DEFAULT 0'), ('paid_at', 'TEXT')])
+    _add_columns('invoice_lines', [("line_type", "TEXT NOT NULL DEFAULT 'session'"), ("note", "TEXT")])
 
     defaults = [
         ('hourly_rate',      '0'),
