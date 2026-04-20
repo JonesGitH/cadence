@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Dashboard</h2>
+    <p>Welcome back. Here's your billing overview.</p>
+  </div>
+  <a href="{{ url_for('create_invoice') }}" class="btn btn-primary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    New Invoice
+  </a>
+</div>
+
+<!-- Today's Appointments -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      Today's Appointments
+      <span class="text-muted" style="font-size:13px; font-weight:400; margin-left:8px">{{ today_appointments|length }} session{% if today_appointments|length != 1 %}s{% endif %}</span>
+    </div>
+    <a href="{{ url_for('calendar_view') }}" class="btn btn-secondary btn-sm">View Calendar</a>
+  </div>
+  {% if today_appointments %}
+  <div class="today-appt-list">
+    {% for appt in today_appointments %}
+    <div class="today-appt-row{% if appt.matched %} today-appt-matched{% endif %}{% if appt.overdue %} today-appt-overdue{% endif %}">
+      <div class="today-appt-time">{{ appt.start_time }} – {{ appt.end_time }}</div>
+      <div class="today-appt-name">{{ appt.student }}</div>
+      {% if appt.overdue %}<span class="badge badge-gray" style="font-size:11px; margin-left:auto">Done</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted" style="font-size:13px; margin:0">No appointments found for today.</p>
+  {% endif %}
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Students</div>
+    <div class="stat-value">{{ total_clients }}</div>
+    <div class="stat-sub">Active students</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Invoices</div>
+    <div class="stat-value">{{ total_invoices }}</div>
+    <div class="stat-sub">All time</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Billed</div>
+    <div class="stat-value">${{ "%.2f"|format(total_billed) }}</div>
+    <div class="stat-sub">All time</div>
+  </div>
+</div>
+
+<!-- Recent Invoices -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Recent Invoices</div>
+    <a href="{{ url_for('invoices') }}" class="btn btn-ghost btn-sm">View All</a>
+  </div>
+
+  {% if recent %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Client</th>
+          <th>Period</th>
+          <th class="text-right">Amount</th>
+          <th class="text-right">Date Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in recent %}
+        <tr>
+          <td><span class="badge badge-blue">{{ inv.invoice_number }}</span></td>
+          <td class="font-bold">{{ inv.client_name }}</td>
+          <td class="text-muted">{{ month_name(inv.month, inv.year) }}</td>
+          <td class="text-right font-bold">${{ "%.2f"|format(inv.total_amount) }}</td>
+          <td class="text-right text-muted">{{ inv.created_at[:10]|friendly_date }}</td>
+          <td class="text-right">
+            <a href="{{ url_for('invoice_detail', invoice_id=inv.id) }}" class="btn btn-ghost btn-sm">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📄</div>
+    <h3>No invoices yet</h3>
+    <p>Create your first invoice to get started.</p>
+    <a href="{{ url_for('create_invoice') }}" class="btn btn-primary mt-4">Create Invoice</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if total_clients == 0 %}
+<div class="alert alert-info">
+  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  Get started by <a href="{{ url_for('clients') }}">adding your first student</a>, then configure your
+  <a href="{{ url_for('settings') }}">session rate and Outlook calendars</a>.
+</div>
+{% endif %}
+
+{% if school_counts or age_counts or service_counts %}
+<!-- Student Breakdown -->
+<div style="margin-bottom:12px">
+  <h3 style="font-size:16px; font-weight:700; color:var(--text)">Student Overview</h3>
+  <p style="font-size:13px; color:var(--muted); margin-top:3px">Totals across all students.</p>
+</div>
+<div class="breakdown-grid">
+
+  <!-- Schools -->
+  {% if school_counts %}
+  <div class="card breakdown-card">
+    <div class="breakdown-card-title">Schools</div>
+    <div class="breakdown-rows">
+      {% for name, n in school_counts %}
+      <div class="breakdown-row">
+        <span>{{ name }}</span>
+        <span class="breakdown-count">{{ n }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Ages -->
+  {% if age_counts %}
+  <div class="card breakdown-card">
+    <div class="breakdown-card-title">Ages</div>
+    <div class="breakdown-rows">
+      {% for age, n in age_counts %}
+      <div class="breakdown-row">
+        <span>Age {{ age }}</span>
+        <span class="breakdown-count">{{ n }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Services -->
+  {% if service_counts %}
+  <div class="card breakdown-card">
+    <div class="breakdown-card-title">Services</div>
+    <div class="breakdown-rows">
+      {% for svc_key, n in service_counts %}
+      <div class="breakdown-row">
+        <span>{{ services_map.get(svc_key, svc_key.replace('_',' ').title()) }}</span>
+        <span class="breakdown-count">{{ n }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+
+{% endblock %}

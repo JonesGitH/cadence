@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ year }} Summary — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ year }} Annual Summary</h2>
+    <p>Income overview for tax reporting and planning.</p>
+  </div>
+  <div class="flex gap-2" style="align-items:center; flex-wrap:wrap">
+    <select id="year-jump" class="filter-select" onchange="window.location='/summary/'+this.value">
+      {% for y in years %}
+      <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('export_summary_csv', year=year) }}" class="btn btn-ghost">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- Totals -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Billed</div>
+    <div class="stat-value">${{ "%.2f"|format(totals.total_amount) }}</div>
+    <div class="stat-sub">{{ totals.invoice_count }} invoice{{ 's' if totals.invoice_count != 1 }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Collected</div>
+    <div class="stat-value text-success">${{ "%.2f"|format(totals.paid_amount) }}</div>
+    <div class="stat-sub">{{ "%.1f"|format(totals.paid_amount / totals.total_amount * 100 if totals.total_amount else 0) }}% of billed</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Outstanding</div>
+    <div class="stat-value text-warning">${{ "%.2f"|format(totals.total_amount - totals.paid_amount) }}</div>
+    <div class="stat-sub">{{ "%.1f"|format(totals.total_hours) }} total hours</div>
+  </div>
+</div>
+
+{% if not by_month %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No invoices for {{ year }}</h3>
+    <p>Generate invoices to see your annual summary here.</p>
+  </div>
+</div>
+{% else %}
+
+<!-- By Month -->
+<div class="card" style="padding:0">
+  <div style="padding:16px 24px 0">
+    <div class="card-title">Monthly Breakdown</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="text-right">Invoices</th>
+          <th class="text-right">Hours</th>
+          <th class="text-right">Billed</th>
+          <th class="text-right">Collected</th>
+          <th class="text-right">Outstanding</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_month %}
+        <tr>
+          <td class="font-bold">{{ month_name(row.month, year) }}</td>
+          <td class="text-right text-muted">{{ row.invoice_count }}</td>
+          <td class="text-right text-muted">{{ "%.1f"|format(row.total_hours) }}</td>
+          <td class="text-right">${{ "%.2f"|format(row.total_amount) }}</td>
+          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
+          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
+        </tr>
+        {% endfor %}
+        <tr style="border-top:2px solid var(--border); font-weight:700">
+          <td>Total</td>
+          <td class="text-right">{{ totals.invoice_count }}</td>
+          <td class="text-right">{{ "%.1f"|format(totals.total_hours) }}</td>
+          <td class="text-right">${{ "%.2f"|format(totals.total_amount) }}</td>
+          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(totals.paid_amount) }}</td>
+          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(totals.total_amount - totals.paid_amount) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- By Student -->
+<div class="card" style="padding:0">
+  <div style="padding:16px 24px 0">
+    <div class="card-title">By Student</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th class="text-right">Invoices</th>
+          <th class="text-right">Hours</th>
+          <th class="text-right">Billed</th>
+          <th class="text-right">Collected</th>
+          <th class="text-right">Outstanding</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_student %}
+        <tr>
+          <td class="font-bold">{{ row.name }}</td>
+          <td class="text-right text-muted">{{ row.invoice_count }}</td>
+          <td class="text-right text-muted">{{ "%.1f"|format(row.total_hours) }}</td>
+          <td class="text-right">${{ "%.2f"|format(row.total_amount) }}</td>
+          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
+          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

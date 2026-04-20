@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ inv.invoice_number }} — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ inv.invoice_number }}</h2>
+    <p><a href="{{ url_for('invoices') }}">← Invoice History</a></p>
+  </div>
+  <div class="flex gap-2" style="align-items:center; flex-wrap:wrap">
+    <button class="btn {% if inv.paid %}btn-success{% else %}btn-ghost{% endif %}"
+            id="paid-btn" onclick="togglePaid({{ inv.id }})">
+      {% if inv.paid %}✓ Paid{% else %}Mark as Paid{% endif %}
+    </button>
+    <div style="display:flex; flex-direction:column; gap:2px">
+      <button class="btn btn-primary" onclick="sendEmail({{ inv.id }})"
+        {% if not client or not client.email %}disabled{% endif %}>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Send via Email
+      </button>
+      {% if not client or not client.email %}
+      <span class="form-hint" style="font-size:11px">Add client email to enable</span>
+      {% endif %}
+    </div>
+    <button class="btn btn-ghost" onclick="openPdf({{ inv.id }})">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Save PDF
+    </button>
+    <button class="btn btn-ghost" onclick="openFolder({{ inv.id }})">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+      Open Folder
+    </button>
+    <form id="del-inv-form" method="POST" action="{{ url_for('delete_invoice', invoice_id=inv.id) }}"
+          style="margin-left:auto">
+      <button type="button" class="btn btn-ghost-danger"
+        onclick="confirmDelete('del-inv-form', 'Invoice {{ inv.invoice_number }}')">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <!-- Invoice header -->
+  <div class="inv-header">
+    <div>
+      <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:600; margin-bottom:6px">Bill To</div>
+      {% if client and (client.parent1_name or client.parent2_name) %}
+        {% set p1 = client.parent1_name or '' %}
+        {% set p2 = client.parent2_name or '' %}
+        <div style="font-size:17px; font-weight:700">
+          {{ (p1 + ' &amp; ' + p2) if (p1 and p2) else (p1 or p2) }}
+        </div>
+      {% else %}
+        <div style="font-size:17px; font-weight:700">{{ inv.client_name }}</div>
+      {% endif %}
+      {% if client and client.parent_address %}
+      <div style="font-size:13px; color:var(--muted); margin-top:4px">{{ client.parent_address }}</div>
+      {% endif %}
+      {% if client and (client.parent_city or client.parent_state) %}
+      <div style="font-size:13px; color:var(--muted)">
+        {{ client.parent_city }}{% if client.parent_city and client.parent_state %}, {% endif %}{{ client.parent_state }} {{ client.parent_zip or '' }}
+      </div>
+      {% endif %}
+      <div style="font-size:13px; color:var(--muted); margin-top:6px">Student: <b>{{ inv.client_name }}</b></div>
+    </div>
+    <div class="inv-meta">
+      <div class="inv-number">{{ inv.invoice_number }}</div>
+      <div class="inv-period">{{ month_name(inv.month, inv.year) }}</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:4px">Created {{ inv.created_at[:10]|friendly_date }}</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:2px">Due: Upon Receipt</div>
+      {% if inv.paid %}
+      <div style="font-size:12px; color:var(--success); margin-top:6px; font-weight:600">
+        ✓ Paid{% if inv.paid_at %} {{ inv.paid_at|friendly_date }}{% endif %}
+      </div>
+      {% else %}
+      <div style="font-size:12px; color:var(--warning); margin-top:6px; font-weight:600">Outstanding</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Session lines -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th class="text-right">Hours</th>
+          <th class="text-right">Rate</th>
+          <th class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        {% if line['line_type'] == 'late_fee' %}
+        <tr>
+          <td colspan="4" class="text-muted" style="font-style:italic">{{ line['note'] or 'Late fee' }}</td>
+          <td class="text-right font-bold">${{ "%.2f"|format(line.line_total) }}</td>
+        </tr>
+        {% elif line['line_type'] == 'credit' %}
+        <tr>
+          <td colspan="4" style="font-style:italic; color:#15803d">{{ line['note'] or 'Credit' }}</td>
+          <td class="text-right font-bold" style="color:#15803d">-${{ "%.2f"|format(line.line_total) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td>{{ line.session_date }}</td>
+          <td class="text-muted">{{ line.start_time }} – {{ line.end_time }}</td>
+          <td class="text-right">{{ "%.2f"|format(line.duration_hours) }}</td>
+          <td class="text-right text-muted">${{ "%.2f"|format(line.rate) }}/session</td>
+          <td class="text-right font-bold">${{ "%.2f"|format(line.line_total) }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        <!-- Total row -->
+        <tr class="inv-total-row">
+          <td colspan="2"></td>
+          <td class="text-right">{{ "%.2f"|format(inv.total_hours) }} hrs</td>
+          <td class="text-right">TOTAL</td>
+          <td class="text-right">${{ "%.2f"|format(inv.total_amount) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if inv.pdf_path %}
+  <div class="mt-4" style="font-size:13px; color:var(--muted)">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
+         viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span title="{{ inv.pdf_path }}">Saved: {{ inv.pdf_path.split('\\')[-1].split('/')[-1] }}</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

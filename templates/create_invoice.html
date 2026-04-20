@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}New Invoice — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>New Invoice</h2>
+    <p>Select a client and month to pull sessions from your Outlook calendar.</p>
+  </div>
+</div>
+
+<!-- Step 1: Select client + period -->
+<div class="card">
+  <div class="card-title">Step 1 — Select Client &amp; Period</div>
+
+  <div class="form-grid-3">
+    <div class="form-group">
+      <label for="client-select">Client</label>
+      {% if clients %}
+      <select id="client-select">
+        <option value="">— Choose a client —</option>
+        {% for c in clients %}
+        <option value="{{ c.id }}">{{ c.name }} ({{ c.initials }})</option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <select id="client-select" disabled>
+        <option>No clients — add one first</option>
+      </select>
+      <span class="form-hint"><a href="{{ url_for('clients') }}">Add a client</a> before creating an invoice.</span>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="month-select">Month</label>
+      <select id="month-select">
+        {% for num, name in months %}
+        <option value="{{ num }}" {% if num == current_month %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="year-select">Year</label>
+      <select id="year-select">
+        {% for y in years %}
+        <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="mt-4" style="display:flex; align-items:center; gap:14px">
+    <button class="btn btn-primary" id="fetch-btn" {% if not clients %}disabled{% endif %}>
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Find Sessions in Outlook
+    </button>
+    <span id="fetch-loading" style="display:none"><span class="spinner"></span></span>
+    <span id="fetch-error" class="text-danger" style="display:none; font-size:14px"></span>
+  </div>
+  <p id="sessions-hint" class="form-hint" style="margin-top:10px">
+    Select a client and click <strong>Find Sessions</strong> — matching Outlook appointments will appear here.
+  </p>
+</div>
+
+<!-- Step 2: Review sessions -->
+<div class="card" id="sessions-area">
+  <div class="card-header">
+    <div class="card-title">Step 2 — Review Sessions</div>
+    <span id="sessions-summary" class="text-muted" style="font-size:13px"></span>
+  </div>
+
+  <div id="no-sessions-msg" class="alert alert-warning" style="display:none">
+    No appointments found for these initials in the selected month. Check that the client's
+    initials match exactly what appears in your Outlook calendar.
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px">
+            <input type="checkbox" id="select-all-sessions" checked title="Select / deselect all"
+                   style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)">
+          </th>
+          <th>Date</th>
+          <th>Time</th>
+          <th class="text-right">Duration</th>
+          <th class="text-right">Rate</th>
+          <th class="text-right">Session Total</th>
+        </tr>
+      </thead>
+      <tbody id="sessions-body"></tbody>
+    </table>
+  </div>
+
+  <div class="mt-4" style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+    <div style="display:flex; gap:8px">
+      <button class="btn btn-secondary" id="late-fee-btn" type="button">Add Late Fee</button>
+      <button class="btn btn-secondary" id="credit-btn" type="button">Add Credit</button>
+    </div>
+    <div style="display:flex; gap:10px">
+      <button class="btn btn-secondary" id="refetch-btn">
+        ← Change Selection
+      </button>
+      <button class="btn btn-primary" id="generate-btn" disabled>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Generate Invoice &amp; Save PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Late Fee Modal -->
+<div class="modal-overlay" id="late-fee-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Late Fee</div>
+      <button class="modal-close" onclick="closeModal('late-fee-modal')" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="late-fee-amount">Amount ($)</label>
+        <input type="number" id="late-fee-amount" min="0" step="0.01" placeholder="0.00">
+        <span class="form-hint" id="late-fee-amount-err" style="color:var(--danger);display:none">Please enter a valid amount.</span>
+      </div>
+      <div class="form-group">
+        <label for="late-fee-note">Note</label>
+        <input type="text" id="late-fee-note" placeholder="e.g. Late payment fee" maxlength="120">
+        <span class="form-hint">Appears as the line item description on the invoice.</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px">
+      <button class="btn btn-secondary" onclick="closeModal('late-fee-modal')" type="button">Cancel</button>
+      <button class="btn btn-primary" id="late-fee-apply-btn" type="button">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Credit Modal -->
+<div class="modal-overlay" id="credit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Credit</div>
+      <button class="modal-close" onclick="closeModal('credit-modal')" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="credit-amount">Amount ($)</label>
+        <input type="number" id="credit-amount" min="0" step="0.01" placeholder="0.00">
+        <span class="form-hint" id="credit-amount-err" style="color:var(--danger);display:none">Please enter a valid amount.</span>
+      </div>
+      <div class="form-group">
+        <label for="credit-note">Note</label>
+        <input type="text" id="credit-note" placeholder="e.g. Prepaid session credit" maxlength="120">
+        <span class="form-hint">Appears as the line item description on the invoice.</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px">
+      <button class="btn btn-secondary" onclick="closeModal('credit-modal')" type="button">Cancel</button>
+      <button class="btn btn-primary" id="credit-apply-btn" type="button">Apply</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

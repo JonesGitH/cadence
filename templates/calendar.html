@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Calendar — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Calendar</h2>
+    <p>Appointments from your enabled Microsoft 365 calendars. Click any event to see details.</p>
+  </div>
+  <div class="flex gap-2" style="align-items:center">
+    <a href="{{ url_for('calendar_view', month=prev_month, year=prev_year) }}"
+       class="btn btn-secondary btn-sm">&#8592; Prev</a>
+    <span class="cal-month-label">{{ month_name_str }} {{ year }}</span>
+    <a href="{{ url_for('calendar_view', month=next_month, year=next_year) }}"
+       class="btn btn-secondary btn-sm">Next &#8594;</a>
+  </div>
+</div>
+
+{% if not enabled %}
+<div class="alert alert-warning">
+  No Outlook calendars are enabled. Go to
+  <a href="{{ url_for('settings') }}">Settings → Outlook Calendars</a> and enable at least one.
+</div>
+
+{% else %}
+
+{% if error %}
+<div class="alert alert-error" style="margin-bottom:16px">
+  {% if error == 'no_client_id' %}
+    Microsoft 365 is not configured. Go to
+    <a href="{{ url_for('settings') }}">Settings → Microsoft 365</a> and enter your Azure App Client ID, then connect your account.
+  {% else %}
+    Could not load calendar: {{ error }}.
+    <a href="{{ request.url }}">Try again</a> or go to
+    <a href="{{ url_for('settings') }}">Settings → Microsoft 365</a> to reconnect.
+  {% endif %}
+</div>
+{% endif %}
+<div class="cal-wrap card" style="padding:0; overflow:hidden">
+
+  <!-- Day-of-week header -->
+  <div class="cal-header-row">
+    {% for dow in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] %}
+    <div class="cal-header-cell">{{ dow }}</div>
+    {% endfor %}
+  </div>
+
+  <!-- Weeks -->
+  {% set total_cells = first_weekday + days_in_month %}
+  {% set total_rows  = ((total_cells - 1) // 7) + 1 %}
+
+  {% for row in range(total_rows) %}
+  <div class="cal-row">
+    {% for col in range(7) %}
+      {% set cell_idx = row * 7 + col %}
+      {% set day      = cell_idx - first_weekday + 1 %}
+      {% if day < 1 or day > days_in_month %}
+      <div class="cal-cell cal-cell-out"></div>
+      {% else %}
+      <div class="cal-cell {% if today_day == day %}cal-cell-today{% endif %}"
+           onclick="openDayModal({{ day }})">
+        <div class="cal-day-num {% if today_day == day %}cal-day-today{% endif %}">{{ day }}</div>
+
+        {% set items = by_day[day] %}
+        {% for item in items[:3] %}
+        <div class="cal-chip {% if item.student %}cal-chip-matched{% endif %}"
+             data-entry-id="{{ item.entry_id }}"
+             data-subject="{{ item.subject|e }}"
+             data-date="{{ item.date }}"
+             data-start="{{ item.start_24 }}"
+             data-end="{{ item.end_24 }}"
+             data-calendar="{{ item.calendar|e }}"
+             data-start-display="{{ item.start_time }}"
+             data-end-display="{{ item.end_time }}"
+             onclick="event.stopPropagation(); openEditModal(this)"
+             title="{{ item.subject }}">
+          <span class="cal-chip-time">{{ item.start_time }}</span>
+          <span class="cal-chip-title">{% if item.student %}{{ item.student }}{% else %}{{ item.subject }}{% endif %}</span>
+        </div>
+        {% endfor %}
+
+        {% if items|length > 3 %}
+        <div class="cal-more" onclick="event.stopPropagation(); openDayModal({{ day }})">
+          +{{ items|length - 3 }} more
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- Legend -->
+<div class="flex gap-3 mt-4" style="font-size:12px; color:var(--muted); align-items:center; flex-wrap:wrap">
+  <span class="cal-legend-item" title="Appointment subject contains a student's Outlook initials">
+    <span class="cal-legend-dot" style="background:var(--primary)"></span> Student session
+  </span>
+  <span class="cal-legend-item" title="No matching student initials found in the appointment subject">
+    <span class="cal-legend-dot" style="background:#94a3b8"></span> Other appointment
+  </span>
+  <span style="margin-left:auto; font-size:11px">Click an event to edit · Click a date to see all events</span>
+</div>
+{% endif %}
+
+
+<!-- Day detail modal -->
+<div class="modal-overlay" id="day-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="day-modal-title">Events</div>
+    <div id="day-modal-body" style="max-height:60vh; overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('day-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit appointment modal -->
+<div class="modal-overlay" id="edit-cal-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Edit Appointment</div>
+      <button class="modal-close" onclick="closeModal('edit-cal-modal')" type="button">&times;</button>
+    </div>
+    <div id="edit-cal-error" class="alert alert-error" style="display:none;margin-bottom:12px"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label for="ec-subject">Title</label>
+      <input type="text" id="ec-subject" placeholder="Appointment title">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label for="ec-date">Date</label>
+      <input type="date" id="ec-date">
+    </div>
+    <div class="form-grid" style="margin-bottom:4px">
+      <div class="form-group">
+        <label for="ec-start">Start Time</label>
+        <input type="time" id="ec-start">
+      </div>
+      <div class="form-group">
+        <label for="ec-end">End Time</label>
+        <input type="time" id="ec-end">
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="ec-calendar-label"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('edit-cal-modal')">Cancel</button>
+      <button type="button" class="btn btn-primary" id="ec-save-btn" onclick="saveCalEdit()">
+        Save to Outlook
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Serialize all events from Jinja into JS so the day-modal can access them
+var CAL_EVENTS = {
+  {% for day, items in by_day.items() %}
+  {{ day }}: [
+    {% for item in items %}
+    {
+      entryId:      {{ item.entry_id | tojson }},
+      subject:      {{ item.subject | tojson }},
+      date:         {{ item.date | tojson }},
+      start:        {{ item.start_24 | tojson }},
+      end:          {{ item.end_24 | tojson }},
+      startDisplay: {{ item.start_time | tojson }},
+      endDisplay:   {{ item.end_time | tojson }},
+      calendar:     {{ item.calendar | tojson }},
+      student:      {{ (item.student or '') | tojson }},
+    },
+    {% endfor %}
+  ],
+  {% endfor %}
+};
+
+var _currentEntryId = null;
+
+function openDayModal(day) {
+  var items = CAL_EVENTS[day] || [];
+  if (!items.length) return;
+
+  var monthName = {{ month_name_str | tojson }};
+  document.getElementById('day-modal-title').textContent = monthName + ' ' + day;
+
+  var html = '';
+  items.forEach(function(item) {
+    var matched = item.student ? 'day-event-matched' : '';
+    html +=
+      '<div class="day-event ' + matched + '" onclick="openEditFromDay(' + JSON.stringify(item).replace(/"/g,"&quot;") + ')">' +
+        '<div class="day-event-time">' + item.startDisplay + ' – ' + item.endDisplay + '</div>' +
+        '<div class="day-event-title">' + escHtml(item.subject) + '</div>' +
+        (item.student ? '<div class="day-event-student">' + escHtml(item.student) + '</div>' : '') +
+        '<div class="day-event-cal">' + escHtml(item.calendar) + '</div>' +
+      '</div>';
+  });
+  document.getElementById('day-modal-body').innerHTML = html;
+  openModal('day-modal');
+}
+
+function openEditFromDay(item) {
+  closeModal('day-modal');
+  _currentEntryId = item.entryId;
+  document.getElementById('ec-subject').value      = item.subject;
+  document.getElementById('ec-date').value         = item.date;
+  document.getElementById('ec-start').value        = item.start;
+  document.getElementById('ec-end').value          = item.end;
+  document.getElementById('ec-calendar-label').textContent = 'Calendar: ' + item.calendar;
+  document.getElementById('edit-cal-error').style.display = 'none';
+  openModal('edit-cal-modal');
+}
+
+function openEditModal(el) {
+  _currentEntryId = el.dataset.entryId;
+  document.getElementById('ec-subject').value      = el.dataset.subject;
+  document.getElementById('ec-date').value         = el.dataset.date;
+  document.getElementById('ec-start').value        = el.dataset.start;
+  document.getElementById('ec-end').value          = el.dataset.end;
+  document.getElementById('ec-calendar-label').textContent = 'Calendar: ' + el.dataset.calendar;
+  document.getElementById('edit-cal-error').style.display = 'none';
+  openModal('edit-cal-modal');
+}
+
+function saveCalEdit() {
+  var btn     = document.getElementById('ec-save-btn');
+  var errEl   = document.getElementById('edit-cal-error');
+  var subject = document.getElementById('ec-subject').value.trim();
+  var date    = document.getElementById('ec-date').value;
+  var start   = document.getElementById('ec-start').value;
+  var end     = document.getElementById('ec-end').value;
+
+  if (!subject || !date || !start || !end) {
+    errEl.textContent    = 'All fields are required.';
+    errEl.style.display  = 'block';
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+  errEl.style.display = 'none';
+
+  fetch('/calendar/item/update', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ entry_id: _currentEntryId,
+                              subject: subject, date: date, start: start, end: end })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.error) {
+      errEl.textContent   = d.error;
+      errEl.style.display = 'block';
+      btn.disabled        = false;
+      btn.textContent     = 'Save to Outlook';
+    } else {
+      closeModal('edit-cal-modal');
+      window.location.reload();
+    }
+  })
+  .catch(function() {
+    errEl.textContent   = 'Could not reach Outlook. Make sure it is open.';
+    errEl.style.display = 'block';
+    btn.disabled        = false;
+    btn.textContent     = 'Save to Outlook';
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+{% endblock %}

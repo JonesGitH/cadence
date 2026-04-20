@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Students — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Students</h2>
+    <p>Manage your students and their Outlook initials.</p>
+  </div>
+  <a href="{{ url_for('add_client') }}" class="btn btn-primary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Add Student
+  </a>
+</div>
+
+<!-- Search bar -->
+<div class="search-bar-wrap">
+  <div class="search-bar">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+         style="color:var(--muted); flex-shrink:0">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" id="student-search" placeholder="Search by name, school, grade, diagnosis, services, parent…"
+           autofocus autocomplete="off">
+    <button type="button" id="search-clear-btn" class="search-clear" title="Clear search" style="display:none">✕</button>
+  </div>
+</div>
+
+<!-- Active students -->
+<div class="card" style="padding:0">
+  {% if clients %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Grade</th>
+          <th>School</th>
+          <th>Services</th>
+          <th>Initials</th>
+          <th>Intake</th>
+          <th>ROI</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+        <tr data-search="{{ [c.name, c.grade, c.school, c.diagnosis, c.parent1_name, c.parent2_name, c.initials, c.services_other]|select|join(' ')|lower }}">
+          <td>
+            <div class="font-bold">{{ c.name }}</div>
+            {% if c.age is not none %}<div style="font-size:12px; color:var(--muted)">Age {{ c.age }}</div>{% endif %}
+          </td>
+          <td class="text-muted">{{ c.grade or '—' }}</td>
+          <td class="text-muted">{{ c.school or '—' }}</td>
+          <td>
+            {% if c.services_list %}
+              <div class="services-chips">
+              {% for svc in c.services_list[:2] %}
+                <span class="badge badge-blue" style="margin:1px 2px">{{ svc.replace('_',' ').title() }}</span>
+              {% endfor %}
+              {% if c.services_list|length > 2 %}
+                <span class="badge badge-gray" style="margin:1px 2px">+{{ c.services_list|length - 2 }}</span>
+              {% endif %}
+              </div>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge badge-gray">{{ c.initials }}</span></td>
+          <td>
+            {% if c.intake_complete %}
+              <span class="badge badge-green">✓</span>
+            {% else %}
+              <span class="badge badge-gray">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.roi_complete %}
+              <span class="badge badge-green">✓</span>
+            {% else %}
+              <span class="badge badge-gray">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="flex gap-2" style="justify-content:flex-end">
+              <a href="{{ url_for('edit_client', client_id=c.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+              <form id="archive-client-{{ c.id }}" method="POST" action="{{ url_for('archive_client', client_id=c.id) }}">
+                <button type="submit" class="btn btn-ghost btn-sm" title="Archive this student">Archive</button>
+              </form>
+              <form id="del-client-{{ c.id }}" method="POST" action="{{ url_for('delete_client', client_id=c.id) }}">
+                <button type="button" class="btn btn-ghost-danger btn-sm"
+                  onclick="confirmDelete('del-client-{{ c.id }}', '{{ c.name }}')">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="no-results-row" style="display:none">
+          <td colspan="8" style="text-align:center; padding:32px; color:var(--muted)">No students match your search.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">👤</div>
+    <h3>No students yet</h3>
+    <p>Add your first student to start generating invoices.</p>
+    <a href="{{ url_for('add_client') }}" class="btn btn-primary mt-4">Add Student</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Archived students -->
+{% if archived %}
+<div class="card" style="padding:0">
+  <div style="padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between">
+    <div style="font-size:14px; font-weight:600; color:var(--muted)">Archived Students ({{ archived|length }})</div>
+    <button class="btn btn-ghost btn-sm" id="toggle-archived-btn" onclick="toggleArchived()">Show</button>
+  </div>
+  <div id="archived-section" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          {% for c in archived %}
+          <tr style="opacity:0.7">
+            <td style="width:200px">
+              <div class="font-bold">{{ c.name }}</div>
+              <span class="badge badge-gray" style="font-size:11px">{{ c.initials }}</span>
+            </td>
+            <td class="text-muted" style="font-size:13px">{{ c.grade or '—' }} · {{ c.school or 'No school' }}</td>
+            <td>
+              <div class="flex gap-2" style="justify-content:flex-end">
+                <form method="POST" action="{{ url_for('restore_client', client_id=c.id) }}">
+                  <button type="submit" class="btn btn-ghost btn-sm">Restore</button>
+                </form>
+                <form id="del-archived-{{ c.id }}" method="POST" action="{{ url_for('delete_client', client_id=c.id) }}">
+                  <button type="button" class="btn btn-ghost-danger btn-sm"
+                    onclick="confirmDelete('del-archived-{{ c.id }}', '{{ c.name }}')">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleArchived() {
+  var sec = document.getElementById('archived-section');
+  var btn = document.getElementById('toggle-archived-btn');
+  var show = sec.style.display === 'none';
+  sec.style.display = show ? '' : 'none';
+  btn.textContent   = show ? 'Hide' : 'Show';
+}
+</script>
+{% endblock %}

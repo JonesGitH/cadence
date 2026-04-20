@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cadence",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-c", "import sys, unittest.mock as mock; sys.modules['win32com']=mock.MagicMock(); sys.modules['win32com.client']=mock.MagicMock(); sys.modules['pythoncom']=mock.MagicMock(); sys.path.insert(0,'.'); from database import init_db; init_db(); from app import app; app.run(host='127.0.0.1', port=5001, debug=False)"],
+      "port": 5001
+    }
+  ]
+}

@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Settings — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Settings</h2>
+    <p>Configure your business info, session rate, and Outlook calendars.</p>
+  </div>
+</div>
+
+<!-- Business & Rate -->
+<div class="card">
+  <div class="card-title">Business Information &amp; Rate</div>
+  <form method="POST" action="{{ url_for('save_settings') }}">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="business_name">Your Name</label>
+        <input type="text" id="business_name" name="business_name"
+               value="{{ s.business_name }}" placeholder="Emily Visinsky">
+      </div>
+      <div class="form-group">
+        <label for="business_title">Title / Credentials</label>
+        <input type="text" id="business_title" name="business_title"
+               value="{{ s.business_title }}" placeholder="Educational Therapist, M.Ed.">
+        <span class="form-hint">Appears below your name on every invoice.</span>
+      </div>
+      <div class="form-group">
+        <label for="business_email">Email</label>
+        <input type="email" id="business_email" name="business_email"
+               value="{{ s.business_email }}" placeholder="evisinsky@outlook.com">
+      </div>
+      <div class="form-group">
+        <label for="business_phone">Phone</label>
+        <input type="tel" id="business_phone" name="business_phone"
+               value="{{ s.business_phone }}" placeholder="469-774-7056">
+      </div>
+    </div>
+
+    <div class="form-group mt-4">
+      <label for="business_address">Street Address</label>
+      <input type="text" id="business_address" name="business_address"
+             value="{{ s.business_address }}" placeholder="123 Main St">
+      <span class="form-hint">Printed in your invoice header and payment instructions.</span>
+    </div>
+    <div class="form-grid mt-4" style="max-width:500px">
+      <div class="form-group">
+        <label for="business_city">City</label>
+        <input type="text" id="business_city" name="business_city"
+               value="{{ s.business_city }}" placeholder="Austin">
+      </div>
+      <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <div class="form-group">
+          <label for="business_state">State</label>
+          <input type="text" id="business_state" name="business_state"
+                 value="{{ s.business_state }}" placeholder="TX" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label for="business_zip">Zip</label>
+          <input type="text" id="business_zip" name="business_zip"
+                 value="{{ s.business_zip }}" placeholder="78701">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-grid mt-4">
+      <div class="form-group">
+        <label for="hourly_rate">Per-Session Rate ($)</label>
+        <input type="number" id="hourly_rate" name="hourly_rate"
+               value="{{ s.hourly_rate }}" min="0" step="0.01" placeholder="125.00">
+        <span class="form-hint">Flat rate charged per session. Applied to all invoices.</span>
+      </div>
+      <div class="form-group">
+        <label for="venmo_handle">Venmo Handle</label>
+        <input type="text" id="venmo_handle" name="venmo_handle"
+               value="{{ s.venmo_handle }}" placeholder="@Emily-Visinsky">
+        <span class="form-hint">Printed in invoice payment instructions.</span>
+      </div>
+      <div class="form-group">
+        <label for="idle_timeout_minutes">Idle Timeout</label>
+        <select id="idle_timeout_minutes" name="idle_timeout_minutes">
+          {% for val, label in [('0','Never'),('15','15 minutes'),('30','30 minutes'),('60','1 hour'),('120','2 hours')] %}
+          <option value="{{ val }}" {% if s.idle_timeout_minutes == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="form-hint">Auto-close Cadence after this period of inactivity. Prevents conflicts when using two PCs with a shared database.</span>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </div>
+  </form>
+</div>
+
+<!-- Storage / OneDrive -->
+<div class="card">
+  <div class="card-title">Storage Paths</div>
+  <p class="text-muted mb-4" style="font-size:13px">
+    Point these to a shared <strong>OneDrive</strong> folder so both PCs stay in sync automatically.
+    When you change the database path, your existing data is copied to the new location.
+    <strong>Restart Cadence after saving.</strong>
+  </p>
+  <form method="POST" action="{{ url_for('save_storage') }}">
+    <div class="form-group" style="margin-bottom:14px">
+      <label for="db_path">Database File (.db)</label>
+      <input type="text" id="db_path" name="db_path" value="{{ paths.db_path }}"
+             placeholder="C:\Users\You\OneDrive\Cadence\cadence.db">
+      <span class="form-hint">Stores all students, invoices, and settings.</span>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label for="pdf_folder">Invoice PDF Folder</label>
+      <input type="text" id="pdf_folder" name="pdf_folder" value="{{ paths.pdf_folder }}"
+             placeholder="C:\Users\You\OneDrive\Invoices">
+      <span class="form-hint">PDFs are saved here under subfolders by month (e.g. April 2026\).</span>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:16px; font-size:13px">
+      <strong>OneDrive setup:</strong> Create a <code>Cadence</code> folder inside your OneDrive,
+      then paste the full path to it above. Do the same on your second PC — both will share the
+      same data automatically.
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Storage Paths</button>
+  </form>
+</div>
+
+<!-- Microsoft 365 -->
+<div class="card">
+  <div class="card-title">Microsoft 365</div>
+
+  {% if graph_connected %}
+  <div class="alert alert-success" style="margin-bottom:16px">
+    Connected to Microsoft 365. Calendar and email features are active.
+  </div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('save_graph_settings') }}">
+    <div class="form-grid" style="max-width:680px; margin-bottom:16px">
+      <div class="form-group">
+        <label for="graph_client_id">Azure App Client ID</label>
+        <input type="text" id="graph_client_id" name="graph_client_id"
+               value="{{ s.graph_client_id }}"
+               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        <span class="form-hint">Register a free app at <strong>portal.azure.com</strong> → App registrations → New registration. Grant <code>Calendars.ReadWrite</code> and <code>Mail.Send</code> delegated permissions and enable "Allow public client flows".</span>
+      </div>
+      <div class="form-group">
+        <label for="graph_timezone">Your Timezone</label>
+        <select id="graph_timezone" name="graph_timezone">
+          {% set timezones = [
+            ('Eastern Standard Time',  'Eastern (ET)'),
+            ('Central Standard Time',  'Central (CT)'),
+            ('Mountain Standard Time', 'Mountain (MT)'),
+            ('Pacific Standard Time',  'Pacific (PT)'),
+            ('Alaska Standard Time',   'Alaska (AKT)'),
+            ('Hawaii-Aleutian Standard Time', 'Hawaii (HST)'),
+          ] %}
+          {% for value, label in timezones %}
+          <option value="{{ value }}" {% if s.graph_timezone == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="form-hint">Used to display calendar event times correctly.</span>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-secondary">Save</button>
+      {% if not graph_connected %}
+      <button type="button" class="btn btn-primary" id="graph-connect-btn">Connect Microsoft 365</button>
+      {% else %}
+      <form method="POST" action="{{ url_for('graph_disconnect') }}" style="display:inline">
+        <button type="submit" class="btn btn-ghost-danger">Disconnect</button>
+      </form>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Device flow auth modal -->
+  <div class="modal-overlay" id="graph-auth-modal">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <div class="modal-title">Connect Microsoft 365</div>
+        <button class="modal-close" onclick="closeModal('graph-auth-modal')" type="button">&times;</button>
+      </div>
+      <p style="margin-bottom:12px; color:var(--text)">
+        1. Open this URL in your browser:<br>
+        <a id="graph-auth-url" href="#" target="_blank" style="font-weight:600; word-break:break-all"></a>
+      </p>
+      <p style="margin-bottom:20px; color:var(--text)">
+        2. Enter this code when prompted:
+        <span id="graph-auth-code"
+              style="display:inline-block; margin-left:8px; font-size:20px; font-weight:700;
+                     letter-spacing:3px; color:var(--primary); font-family:monospace"></span>
+      </p>
+      <p class="text-muted" style="font-size:13px" id="graph-auth-status">Waiting for sign-in…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Database Backup -->
+<div class="card">
+  <div class="card-title">Database Backup</div>
+  <p class="text-muted mb-4" style="font-size:13px">
+    Creates a timestamped copy of your database in the same folder as the original.
+    Backups are named <code>cadence_backup_YYYYMMDD_HHMMSS.db</code>.
+  </p>
+  <form method="POST" action="{{ url_for('backup_db') }}">
+    <button type="submit" class="btn btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Back Up Now
+    </button>
+  </form>
+</div>
+
+<!-- Calendars -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Outlook Calendars</div>
+    <form method="POST" action="{{ url_for('refresh_calendars') }}" style="display:inline">
+      <button type="submit" class="btn btn-secondary btn-sm">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Refresh from Outlook
+      </button>
+    </form>
+  </div>
+
+  {% if not calendars %}
+  <div class="alert alert-info">
+    No calendars loaded yet. Click <strong>Refresh from Outlook</strong> to scan your Microsoft 365 calendars.
+    Make sure you are connected to Microsoft 365 above first.
+  </div>
+  {% else %}
+  <p class="text-muted mb-4" style="font-size:13px">
+    Toggle which calendars Cadence scans when looking for student appointments.
+    Mark one as <strong>Default</strong> to pre-select it automatically.
+  </p>
+
+  <form method="POST" action="{{ url_for('save_calendars') }}">
+    {% for cal in calendars %}
+    <div class="cal-pref-row">
+      <div class="cal-name">{{ cal.outlook_name }}</div>
+      <div class="cal-controls">
+        <div class="toggle-wrap">
+          <label class="toggle">
+            <input type="checkbox" name="enabled_{{ cal.id }}"
+                   {% if cal.enabled %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+          </label>
+          Scan
+        </div>
+        <div class="toggle-wrap">
+          <input type="radio" name="default_cal" value="{{ cal.id }}"
+                 class="cal-default-radio"
+                 {% if cal.is_default %}checked{% endif %}
+                 style="accent-color:var(--primary)">
+          Default
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary">Save Calendar Preferences</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

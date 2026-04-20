@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Invoice History — Cadence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Invoice History</h2>
+    <p>All invoices you have generated.</p>
+  </div>
+  <a href="{{ url_for('create_invoice') }}" class="btn btn-primary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    New Invoice
+  </a>
+</div>
+
+{% if invoices %}
+<div class="flex gap-2 mb-4" style="align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:10; background:var(--bg); padding:12px 0; margin-top:-12px">
+  <select id="filter-client" class="filter-select">
+    <option value="">All Students</option>
+    {% for c in filter_clients %}
+    <option value="{{ c }}">{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select id="filter-year" class="filter-select">
+    <option value="">All Years</option>
+    {% for y in years %}
+    <option value="{{ y }}">{{ y }}</option>
+    {% endfor %}
+  </select>
+  <select id="filter-status" class="filter-select">
+    <option value="">All Statuses</option>
+    <option value="unpaid">Unpaid</option>
+    <option value="paid">Paid</option>
+  </select>
+  <span id="filter-count" class="text-muted" style="font-size:13px; margin-left:4px"></span>
+  <button type="button" id="filter-clear-btn" class="btn btn-ghost btn-sm" style="display:none">Clear</button>
+</div>
+{% endif %}
+
+<div class="card" style="padding:0">
+  {% if invoices %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Student</th>
+          <th>Period</th>
+          <th class="text-right">Hours</th>
+          <th class="text-right">Total</th>
+          <th>Status</th>
+          <th class="text-right">Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="invoice-tbody">
+        {% for inv in invoices %}
+        <tr data-client="{{ inv.client_name }}"
+            data-year="{{ inv.year }}"
+            data-status="{{ 'paid' if inv.paid else 'unpaid' }}">
+          <td><span class="badge badge-blue">{{ inv.invoice_number }}</span></td>
+          <td class="font-bold">{{ inv.client_name }}</td>
+          <td class="text-muted">{{ month_name(inv.month, inv.year) }}</td>
+          <td class="text-right text-muted">{{ "%.2f"|format(inv.total_hours) }}</td>
+          <td class="text-right font-bold">${{ "%.2f"|format(inv.total_amount) }}</td>
+          <td>
+            {% if inv.paid %}
+            <span class="badge badge-green">Paid</span>
+            {% else %}
+            <span class="badge badge-warning">Unpaid</span>
+            {% endif %}
+          </td>
+          <td class="text-right text-muted">{{ inv.created_at[:10]|friendly_date }}</td>
+          <td>
+            <a href="{{ url_for('invoice_detail', invoice_id=inv.id) }}"
+               class="btn btn-ghost btn-sm">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="no-inv-results" style="display:none">
+          <td colspan="8" style="text-align:center; padding:32px; color:var(--muted)">No invoices match your filters.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No invoices yet</h3>
+    <p>Your generated invoices will appear here.</p>
+    <a href="{{ url_for('create_invoice') }}" class="btn btn-primary mt-4">Create Your First Invoice</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
