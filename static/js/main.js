@@ -359,12 +359,13 @@ function sendEmail(invoiceId) {
     .then(function(d) {
       btn.disabled = false;
       btn.innerHTML = _EMAIL_BTN_HTML;
-      if (d.error) alert(d.error);
+      if (d.error) Toast.show(d.error, 'error');
+      else Toast.show('Invoice email sent.', 'success');
     })
     .catch(function() {
       btn.disabled = false;
       btn.innerHTML = _EMAIL_BTN_HTML;
-      alert('Could not send email. Make sure Microsoft 365 is connected in Settings.');
+      Toast.show('Could not send email. Check Microsoft 365 in Settings.', 'error');
     });
 }
 
@@ -423,16 +424,18 @@ function togglePaid(invoiceId) {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       btn.disabled = false;
-      if (d.error) { alert(d.error); return; }
+      if (d.error) { Toast.show(d.error, 'error'); return; }
       if (d.paid) {
         btn.textContent = '✓ Paid';
         btn.className = 'btn btn-success';
+        Toast.show('Marked as paid.', 'success');
       } else {
         btn.textContent = 'Mark as Paid';
         btn.className = 'btn btn-ghost';
+        Toast.show('Marked as unpaid.', 'info');
       }
     })
-    .catch(function() { btn.disabled = false; alert('Could not update payment status.'); });
+    .catch(function() { btn.disabled = false; Toast.show('Could not update payment status.', 'error'); });
 }
 
 (function() {
@@ -485,15 +488,15 @@ function togglePaid(invoiceId) {
 function openPdf(invoiceId) {
   fetch('/invoices/' + invoiceId + '/open-pdf', { method: 'POST' })
     .then(function(r) { return r.json(); })
-    .then(function(d) { if (d.error) alert(d.error); })
-    .catch(function() { alert('Could not open PDF.'); });
+    .then(function(d) { if (d.error) Toast.show(d.error, 'error'); })
+    .catch(function() { Toast.show('Could not open PDF.', 'error'); });
 }
 
 function openFolder(invoiceId) {
   fetch('/invoices/' + invoiceId + '/open-folder', { method: 'POST' })
     .then(function(r) { return r.json(); })
-    .then(function(d) { if (d.error) alert(d.error); })
-    .catch(function() { alert('Could not open folder.'); });
+    .then(function(d) { if (d.error) Toast.show(d.error, 'error'); })
+    .catch(function() { Toast.show('Could not open folder.', 'error'); });
 }
 
 (function() {
@@ -532,6 +535,149 @@ function openFolder(invoiceId) {
   defaultRadios.forEach(function(radio) {
     radio.addEventListener('change', function() {
       defaultRadios.forEach(function(r) { if (r !== radio) r.checked = false; });
+    });
+  });
+})();
+
+/* ── Toast system ───────────────────────────────────────────────────────────── */
+window.Toast = (function() {
+  function stack() {
+    var s = document.getElementById('toast-stack');
+    if (!s) {
+      s = document.createElement('div');
+      s.id = 'toast-stack';
+      s.className = 'toast-stack';
+      document.body.appendChild(s);
+    }
+    return s;
+  }
+  function show(msg, type, ms) {
+    type = type || 'info';
+    ms = ms || 3400;
+    var t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    stack().appendChild(t);
+    setTimeout(function() {
+      t.style.animation = 'toast-out .25s ease-in forwards';
+      setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 250);
+    }, ms);
+    return t;
+  }
+  return { show: show };
+})();
+
+/* ── Sidebar toggle (mobile) ────────────────────────────────────────────────── */
+(function() {
+  document.addEventListener('click', function(e) {
+    var toggle = e.target.closest('.sidebar-toggle');
+    var sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    if (toggle) {
+      sidebar.classList.toggle('open');
+      return;
+    }
+    // close when clicking main content on small screens
+    if (sidebar.classList.contains('open') && !e.target.closest('.sidebar')) {
+      sidebar.classList.remove('open');
+    }
+  });
+})();
+
+/* ── Sortable tables ────────────────────────────────────────────────────────── */
+(function() {
+  function sortKey(td, type) {
+    if (!td) return type === 'number' ? 0 : '';
+    var v = td.getAttribute('data-sort-value');
+    if (v === null) v = td.textContent.trim();
+    if (type === 'number') {
+      var n = parseFloat(v.replace(/[^0-9.\-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    }
+    return v.toLowerCase();
+  }
+  document.querySelectorAll('table').forEach(function(table) {
+    var headers = table.querySelectorAll('th.sortable');
+    if (!headers.length) return;
+    headers.forEach(function(th, idx) {
+      th.addEventListener('click', function() {
+        var type = th.getAttribute('data-sort-type') || 'string';
+        var asc = !th.classList.contains('sort-asc');
+        headers.forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
+        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+        var tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        var rows = Array.from(tbody.querySelectorAll('tr')).filter(function(r) {
+          return !r.hasAttribute('data-no-sort');
+        });
+        rows.sort(function(a, b) {
+          var av = sortKey(a.children[idx], type);
+          var bv = sortKey(b.children[idx], type);
+          if (av < bv) return asc ? -1 : 1;
+          if (av > bv) return asc ? 1 : -1;
+          return 0;
+        });
+        rows.forEach(function(r) { tbody.appendChild(r); });
+      });
+    });
+  });
+})();
+
+/* ── Row action menus ───────────────────────────────────────────────────────── */
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.row-actions-btn');
+    if (btn) {
+      e.stopPropagation();
+      var wrap = btn.closest('.row-actions');
+      var wasOpen = wrap.classList.contains('open');
+      document.querySelectorAll('.row-actions.open').forEach(function(w) {
+        w.classList.remove('open');
+        var m = w.querySelector('.row-actions-menu');
+        if (m) m.style.cssText = '';
+      });
+      if (!wasOpen) {
+        wrap.classList.add('open');
+        var menu = wrap.querySelector('.row-actions-menu');
+        if (menu) {
+          var r = btn.getBoundingClientRect();
+          menu.style.position = 'fixed';
+          menu.style.top = (r.bottom + 4) + 'px';
+          menu.style.right = (window.innerWidth - r.right) + 'px';
+          menu.style.left = 'auto';
+          // flip up if not enough space below
+          var mh = menu.offsetHeight;
+          if (r.bottom + 4 + mh > window.innerHeight - 8) {
+            menu.style.top = (r.top - 4 - mh) + 'px';
+          }
+        }
+      }
+      return;
+    }
+    if (!e.target.closest('.row-actions-menu')) {
+      document.querySelectorAll('.row-actions.open').forEach(function(w) { w.classList.remove('open'); });
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.row-actions.open').forEach(function(w) { w.classList.remove('open'); });
+    }
+  });
+})();
+
+/* ── Tabs ───────────────────────────────────────────────────────────────────── */
+(function() {
+  document.querySelectorAll('.tabs').forEach(function(group) {
+    var tabs = group.querySelectorAll('[data-tab-target]');
+    if (!tabs.length) return;
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var target = tab.getAttribute('data-tab-target');
+        tabs.forEach(function(t) { t.classList.toggle('active', t === tab); });
+        document.querySelectorAll('.tab-panel').forEach(function(p) {
+          p.classList.toggle('active', p.id === target);
+        });
+      });
     });
   });
 })();

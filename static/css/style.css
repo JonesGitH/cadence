@@ -260,11 +260,10 @@ input:focus, select:focus, textarea:focus {
   padding: 12px 16px;
   border-radius: var(--radius);
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  line-height: 1.5;
   margin-bottom: 8px;
 }
+.alert svg { vertical-align: -3px; margin-right: 6px; }
 .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
 .alert-error   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #fecaca; }
 .alert-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a; }
@@ -660,3 +659,226 @@ input:focus, select:focus, textarea:focus {
 }
 .toggle input:checked + .toggle-slider { background: var(--primary); }
 .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* ── Layout overflow fix + responsive sidebar ──────────────────────────────── */
+body { overflow-x: hidden; }
+.main { min-width: 0; max-width: 100%; overflow-x: hidden; }
+.main > * { min-width: 0; }
+.page-header { flex-wrap: wrap; gap: 12px; }
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 14px; left: 14px;
+  z-index: 200;
+  background: #0f172a;
+  color: #cbd5e1;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.sidebar-toggle svg { display: block; width: 20px; height: 20px; }
+
+@media (max-width: 900px) {
+  .sidebar-toggle { display: block; }
+  .sidebar { transform: translateX(-100%); transition: transform .2s; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 60px 20px 24px; }
+  .sidebar::after {
+    content: '';
+    position: fixed; inset: 0; left: var(--sidebar-w);
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .sidebar.open::after { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Invoice number / badge nowrap ─────────────────────────────────────────── */
+.badge { white-space: nowrap; }
+.inv-number-title {
+  font-size: 22px; font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+/* ── Toasts ────────────────────────────────────────────────────────────────── */
+.toast-stack {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 600;
+  pointer-events: none;
+}
+.toast {
+  background: var(--text);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  min-width: 220px;
+  max-width: 360px;
+  animation: toast-in .2s ease-out;
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast-success { background: var(--success); }
+.toast-error   { background: var(--danger); }
+.toast-info    { background: var(--primary); }
+.toast.leaving { animation: toast-out .25s ease-in forwards; }
+@keyframes toast-in  { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toast-out { to   { transform: translateY(12px); opacity: 0; } }
+
+/* ── Status pills with icons ──────────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+  white-space: nowrap;
+}
+.status-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+.status-paid        { background: var(--success-bg); color: var(--success); }
+.status-unpaid      { background: var(--warning-bg); color: var(--warning); }
+.status-outstanding { background: var(--warning-bg); color: var(--warning); }
+
+/* ── Row action menu ──────────────────────────────────────────────────────── */
+.row-actions { position: relative; display: inline-block; }
+.row-actions-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px; line-height: 1;
+}
+.row-actions-btn:hover,
+.row-actions.open .row-actions-btn { background: var(--bg); color: var(--text); border-color: var(--border); }
+.row-actions-menu {
+  display: none;
+  position: absolute;
+  right: 0; top: calc(100% + 4px);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  min-width: 160px;
+  z-index: 50;
+  padding: 4px;
+}
+.row-actions.open .row-actions-menu { display: block; }
+.row-actions-menu button,
+.row-actions-menu a {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+.row-actions-menu button:hover,
+.row-actions-menu a:hover { background: var(--bg); }
+.row-actions-menu .danger { color: var(--danger); }
+.row-actions-menu .danger:hover { background: var(--danger-bg); }
+.row-actions-menu hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── Sortable table headers ───────────────────────────────────────────────── */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); }
+th.sortable::after { content: ' ↕'; opacity: .35; font-size: 10px; }
+th.sort-asc::after  { content: ' ↑'; opacity: 1; color: var(--primary); }
+th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--primary); }
+
+/* ── Tabs (Settings) ─────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab {
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: inherit;
+  transition: color .12s, border-color .12s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.progress {
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--success);
+  transition: width .3s ease;
+}
+
+/* ── Sparkline ──────────────────────────────────────────────────────────── */
+.sparkline {
+  width: 100%;
+  height: 28px;
+  margin-top: 8px;
+  overflow: visible;
+}
+.sparkline path { fill: none; stroke: var(--primary); stroke-width: 1.8; }
+.sparkline .area { fill: var(--primary-lt); stroke: none; }
+
+/* ── Year-over-year delta chip ──────────────────────────────────────────── */
+.delta-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.delta-up   { background: var(--success-bg); color: var(--success); }
+.delta-down { background: var(--danger-bg);  color: var(--danger);  }
+.delta-flat { background: var(--bg);          color: var(--muted);  }
+
+/* ── Totals footer row ──────────────────────────────────────────────────── */
+tfoot td {
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  color: var(--text);
+}
+
+/* ── Focus visible for accessibility ───────────────────────────────────── */
+.btn:focus-visible,
+.nav-link:focus-visible,
+.filter-select:focus-visible,
+.tab:focus-visible,
+.row-actions-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

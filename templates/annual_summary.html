@@ -34,7 +34,9 @@
   <div class="stat-card">
     <div class="stat-label">Collected</div>
     <div class="stat-value text-success">${{ "%.2f"|format(totals.paid_amount) }}</div>
-    <div class="stat-sub">{{ "%.1f"|format(totals.paid_amount / totals.total_amount * 100 if totals.total_amount else 0) }}% of billed</div>
+    {% set pct = (totals.paid_amount / totals.total_amount * 100) if totals.total_amount else 0 %}
+    <div class="progress" title="{{ '%.1f'|format(pct) }}% of billed"><div class="progress-fill" style="width:{{ '%.1f'|format(pct) }}%"></div></div>
+    <div class="stat-sub">{{ "%.1f"|format(pct) }}% of billed</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Outstanding</div>

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <div class="page-header-left">
-    <h2>{{ inv.invoice_number }}</h2>
+    <h2 class="inv-number-title">{{ inv.invoice_number }}</h2>
     <p><a href="{{ url_for('invoices') }}">← Invoice History</a></p>
   </div>
   <div class="flex gap-2" style="align-items:center; flex-wrap:wrap">
@@ -39,7 +39,7 @@
       Open Folder
     </button>
     <form id="del-inv-form" method="POST" action="{{ url_for('delete_invoice', invoice_id=inv.id) }}"
-          style="margin-left:auto">
+          style="margin:0">
       <button type="button" class="btn btn-ghost-danger"
         onclick="confirmDelete('del-inv-form', 'Invoice {{ inv.invoice_number }}')">Delete</button>
     </form>
@@ -75,13 +75,19 @@
       <div class="inv-period">{{ month_name(inv.month, inv.year) }}</div>
       <div style="font-size:12px; color:var(--muted); margin-top:4px">Created {{ inv.created_at[:10]|friendly_date }}</div>
       <div style="font-size:12px; color:var(--muted); margin-top:2px">Due: Upon Receipt</div>
-      {% if inv.paid %}
-      <div style="font-size:12px; color:var(--success); margin-top:6px; font-weight:600">
-        ✓ Paid{% if inv.paid_at %} {{ inv.paid_at|friendly_date }}{% endif %}
+      <div style="margin-top:6px">
+        {% if inv.paid %}
+        <span class="status-pill status-paid">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          Paid{% if inv.paid_at %} · {{ inv.paid_at|friendly_date }}{% endif %}
+        </span>
+        {% else %}
+        <span class="status-pill status-outstanding">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Outstanding
+        </span>
+        {% endif %}
       </div>
-      {% else %}
-      <div style="font-size:12px; color:var(--warning); margin-top:6px; font-weight:600">Outstanding</div>
-      {% endif %}
     </div>
   </div>
 

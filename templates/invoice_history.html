@@ -45,14 +45,14 @@
     <table>
       <thead>
         <tr>
-          <th>Invoice #</th>
-          <th>Student</th>
-          <th>Period</th>
-          <th class="text-right">Hours</th>
-          <th class="text-right">Total</th>
-          <th>Status</th>
-          <th class="text-right">Created</th>
-          <th></th>
+          <th class="sortable" data-sort-type="string">Invoice #</th>
+          <th class="sortable" data-sort-type="string">Student</th>
+          <th class="sortable" data-sort-type="string">Period</th>
+          <th class="sortable text-right" data-sort-type="number">Hours</th>
+          <th class="sortable text-right" data-sort-type="number">Total</th>
+          <th class="sortable" data-sort-type="string">Status</th>
+          <th class="sortable text-right" data-sort-type="string">Created</th>
+          <th style="width:40px"></th>
         </tr>
       </thead>
       <tbody id="invoice-tbody">
@@ -62,27 +62,49 @@
             data-status="{{ 'paid' if inv.paid else 'unpaid' }}">
           <td><span class="badge badge-blue">{{ inv.invoice_number }}</span></td>
           <td class="font-bold">{{ inv.client_name }}</td>
-          <td class="text-muted">{{ month_name(inv.month, inv.year) }}</td>
-          <td class="text-right text-muted">{{ "%.2f"|format(inv.total_hours) }}</td>
-          <td class="text-right font-bold">${{ "%.2f"|format(inv.total_amount) }}</td>
-          <td>
+          <td class="text-muted" data-sort-value="{{ inv.year }}-{{ '%02d'|format(inv.month) }}">{{ month_name(inv.month, inv.year) }}</td>
+          <td class="text-right text-muted" data-sort-value="{{ inv.total_hours }}">{{ "%.2f"|format(inv.total_hours) }}</td>
+          <td class="text-right font-bold" data-sort-value="{{ inv.total_amount }}">${{ "%.2f"|format(inv.total_amount) }}</td>
+          <td data-sort-value="{{ 'paid' if inv.paid else 'unpaid' }}">
             {% if inv.paid %}
-            <span class="badge badge-green">Paid</span>
+            <span class="status-pill status-paid">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Paid
+            </span>
             {% else %}
-            <span class="badge badge-warning">Unpaid</span>
+            <span class="status-pill status-unpaid">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Unpaid
+            </span>
             {% endif %}
           </td>
-          <td class="text-right text-muted">{{ inv.created_at[:10]|friendly_date }}</td>
+          <td class="text-right text-muted" data-sort-value="{{ inv.created_at }}">{{ inv.created_at[:10]|friendly_date }}</td>
           <td>
-            <a href="{{ url_for('invoice_detail', invoice_id=inv.id) }}"
-               class="btn btn-ghost btn-sm">View</a>
+            <div class="row-actions">
+              <button type="button" class="row-actions-btn" aria-label="Actions">⋯</button>
+              <div class="row-actions-menu">
+                <a href="{{ url_for('invoice_detail', invoice_id=inv.id) }}">View</a>
+                <a href="#" onclick="event.preventDefault(); openPdf({{ inv.id }})">Open PDF</a>
+                <a href="#" onclick="event.preventDefault(); openFolder({{ inv.id }})">Open Folder</a>
+              </div>
+            </div>
           </td>
         </tr>
         {% endfor %}
-        <tr id="no-inv-results" style="display:none">
+        <tr id="no-inv-results" data-no-sort style="display:none">
           <td colspan="8" style="text-align:center; padding:32px; color:var(--muted)">No invoices match your filters.</td>
         </tr>
       </tbody>
+      {% if invoices %}
+      <tfoot>
+        <tr>
+          <td colspan="3" class="font-bold">Total ({{ invoices|length }} invoice{{ 's' if invoices|length != 1 else '' }})</td>
+          <td class="text-right font-bold">{{ "%.2f"|format(invoices|sum(attribute='total_hours')) }}</td>
+          <td class="text-right font-bold">${{ "%.2f"|format(invoices|sum(attribute='total_amount')) }}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
     </table>
   </div>
   {% else %}

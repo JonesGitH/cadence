@@ -35,14 +35,14 @@
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Grade</th>
-          <th>School</th>
+          <th class="sortable" data-sort-type="string">Name</th>
+          <th class="sortable" data-sort-type="string">Grade</th>
+          <th class="sortable" data-sort-type="string">School</th>
           <th>Services</th>
-          <th>Initials</th>
-          <th>Intake</th>
-          <th>ROI</th>
-          <th></th>
+          <th class="sortable" data-sort-type="string">Initials</th>
+          <th class="sortable" data-sort-type="string">Intake</th>
+          <th class="sortable" data-sort-type="string">ROI</th>
+          <th style="width:40px"></th>
         </tr>
       </thead>
       <tbody>
@@ -67,30 +67,39 @@
             {% else %}—{% endif %}
           </td>
           <td><span class="badge badge-gray">{{ c.initials }}</span></td>
-          <td>
+          <td data-sort-value="{{ '1' if c.intake_complete else '0' }}">
             {% if c.intake_complete %}
-              <span class="badge badge-green">✓</span>
+              <span class="status-pill status-paid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Complete
+              </span>
             {% else %}
-              <span class="badge badge-gray">—</span>
+              <span class="status-pill status-outstanding">—</span>
             {% endif %}
           </td>
-          <td>
+          <td data-sort-value="{{ '1' if c.roi_complete else '0' }}">
             {% if c.roi_complete %}
-              <span class="badge badge-green">✓</span>
+              <span class="status-pill status-paid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Complete
+              </span>
             {% else %}
-              <span class="badge badge-gray">—</span>
+              <span class="status-pill status-outstanding">—</span>
             {% endif %}
           </td>
           <td>
-            <div class="flex gap-2" style="justify-content:flex-end">
-              <a href="{{ url_for('edit_client', client_id=c.id) }}" class="btn btn-ghost btn-sm">Edit</a>
-              <form id="archive-client-{{ c.id }}" method="POST" action="{{ url_for('archive_client', client_id=c.id) }}">
-                <button type="submit" class="btn btn-ghost btn-sm" title="Archive this student">Archive</button>
-              </form>
-              <form id="del-client-{{ c.id }}" method="POST" action="{{ url_for('delete_client', client_id=c.id) }}">
-                <button type="button" class="btn btn-ghost-danger btn-sm"
-                  onclick="confirmDelete('del-client-{{ c.id }}', '{{ c.name }}')">Delete</button>
-              </form>
+            <div class="row-actions">
+              <button type="button" class="row-actions-btn" aria-label="Actions">⋯</button>
+              <div class="row-actions-menu">
+                <a href="{{ url_for('edit_client', client_id=c.id) }}">Edit</a>
+                <form id="archive-client-{{ c.id }}" method="POST" action="{{ url_for('archive_client', client_id=c.id) }}" style="margin:0">
+                  <button type="submit">Archive</button>
+                </form>
+                <form id="del-client-{{ c.id }}" method="POST" action="{{ url_for('delete_client', client_id=c.id) }}" style="margin:0">
+                  <button type="button" class="danger"
+                    onclick="confirmDelete('del-client-{{ c.id }}', '{{ c.name|e }}')">Delete</button>
+                </form>
+              </div>
             </div>
           </td>
         </tr>

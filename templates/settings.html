@@ -9,7 +9,16 @@
   </div>
 </div>
 
+<div class="tabs">
+  <button type="button" class="tab active" data-tab-target="tab-business">Business</button>
+  <button type="button" class="tab" data-tab-target="tab-storage">Storage</button>
+  <button type="button" class="tab" data-tab-target="tab-ms365">Microsoft 365</button>
+  <button type="button" class="tab" data-tab-target="tab-calendars">Calendars</button>
+  <button type="button" class="tab" data-tab-target="tab-backup">Backup</button>
+</div>
+
 <!-- Business & Rate -->
+<div class="tab-panel active" id="tab-business">
 <div class="card">
   <div class="card-title">Business Information &amp; Rate</div>
   <form method="POST" action="{{ url_for('save_settings') }}">
@@ -93,7 +102,10 @@
   </form>
 </div>
 
+</div>
+
 <!-- Storage / OneDrive -->
+<div class="tab-panel" id="tab-storage">
 <div class="card">
   <div class="card-title">Storage Paths</div>
   <p class="text-muted mb-4" style="font-size:13px">
@@ -125,7 +137,10 @@
   </form>
 </div>
 
+</div>
+
 <!-- Microsoft 365 -->
+<div class="tab-panel" id="tab-ms365">
 <div class="card">
   <div class="card-title">Microsoft 365</div>
 
@@ -196,7 +211,10 @@
   </div>
 </div>
 
+</div>
+
 <!-- Database Backup -->
+<div class="tab-panel" id="tab-backup">
 <div class="card">
   <div class="card-title">Database Backup</div>
   <p class="text-muted mb-4" style="font-size:13px">
@@ -215,7 +233,10 @@
   </form>
 </div>
 
+</div>
+
 <!-- Calendars -->
+<div class="tab-panel" id="tab-calendars">
 <div class="card">
   <div class="card-header">
     <div class="card-title">Outlook Calendars</div>
@@ -270,5 +291,6 @@
     </div>
   </form>
   {% endif %}
+</div>
 </div>
 {% endblock %}
