@@ -15,6 +15,7 @@
   <button type="button" class="tab" data-tab-target="tab-ms365">Microsoft 365</button>
   <button type="button" class="tab" data-tab-target="tab-calendars">Calendars</button>
   <button type="button" class="tab" data-tab-target="tab-backup">Backup</button>
+  <button type="button" class="tab" data-tab-target="tab-import">Import</button>
 </div>
 
 <!-- Business & Rate -->
@@ -291,6 +292,90 @@
     </div>
   </form>
   {% endif %}
+</div>
+</div>
+
+<!-- Import Students -->
+<div class="tab-panel" id="tab-import">
+<div class="card">
+  <div class="card-title">Import Students from Excel</div>
+  <p class="text-muted mb-4" style="font-size:13px">
+    Bulk-import student records from a spreadsheet. Download the template below, fill it in,
+    then upload it here. Students whose names already exist in Cadence will be skipped.
+  </p>
+
+  <div style="display:flex; align-items:flex-start; gap:32px; flex-wrap:wrap">
+
+    <!-- Step 1: Download template -->
+    <div style="flex:1; min-width:220px">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px">
+        <span style="background:var(--primary); color:#fff; border-radius:50%; width:20px; height:20px;
+                     display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px">1</span>
+        Download Template
+      </div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px">
+        Get the pre-formatted Excel template with all available student fields,
+        dropdown validation, and a sample row.
+      </p>
+      <a href="{{ url_for('student_import_template') }}" class="btn btn-secondary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        cadence_students_template.xlsx
+      </a>
+    </div>
+
+    <!-- Step 2: Fill it in -->
+    <div style="flex:1; min-width:220px">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px">
+        <span style="background:var(--primary); color:#fff; border-radius:50%; width:20px; height:20px;
+                     display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px">2</span>
+        Fill In Your Students
+      </div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:0">
+        Open the template in Excel. Row 1 is the header, row 2 has field hints.
+        Start entering student data from <strong>row 3</strong>.
+        You can delete the sample row. Only <strong>Name</strong> and
+        <strong>Initials</strong> are required per student.
+      </p>
+    </div>
+
+    <!-- Step 3: Upload -->
+    <div style="flex:1; min-width:220px">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px">
+        <span style="background:var(--primary); color:#fff; border-radius:50%; width:20px; height:20px;
+                     display:inline-flex; align-items:center; justify-content:center; font-size:11px; margin-right:6px">3</span>
+        Upload &amp; Import
+      </div>
+      <form method="POST" action="{{ url_for('import_students') }}" enctype="multipart/form-data">
+        <div class="form-group" style="margin-bottom:12px">
+          <label for="student_file" style="font-size:13px; color:var(--muted)">Select your completed .xlsx file</label>
+          <input type="file" id="student_file" name="student_file"
+                 accept=".xlsx,.xlsm"
+                 style="display:block; margin-top:6px; font-size:13px; color:var(--text)">
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
+          Import Students
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="alert alert-info" style="margin-top:24px; font-size:13px">
+    <strong>Services column:</strong> enter comma-separated service keys from the
+    <em>Services Reference</em> sheet in the template
+    (e.g. <code>reading,spelling,grammar</code>).
+    Invalid keys are silently dropped. Students with names that already exist
+    in Cadence are skipped without error.
+  </div>
 </div>
 </div>
 {% endblock %}
