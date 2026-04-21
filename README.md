@@ -1,6 +1,6 @@
 # Cadence — Invoice & Scheduling App
 
-> Your consulting rhythm. Generate professional invoices from your Microsoft 365 calendar sessions automatically.
+> **Your consulting rhythm.** Generate professional invoices from your Microsoft 365 calendar sessions automatically.
 
 ---
 
@@ -11,15 +11,16 @@
 3. [Installation](#installation)
 4. [Azure App Registration](#azure-app-registration-one-time-setup)
 5. [First Time Configuration](#first-time-configuration)
-6. [Using Two PCs with OneDrive](#using-two-pcs-with-onedrive)
-7. [Adding Students](#adding-students)
+6. [Importing Students from Excel](#importing-students-from-excel)
+7. [Adding Students Manually](#adding-students-manually)
 8. [Creating an Invoice](#creating-an-invoice)
 9. [Managing Invoices](#managing-invoices)
 10. [Annual Summary & CSV Export](#annual-summary--csv-export)
-11. [Settings Reference](#settings-reference)
-12. [Database Backup](#database-backup)
-13. [Troubleshooting](#troubleshooting)
-14. [File Overview](#file-overview)
+11. [Using Two PCs with OneDrive](#using-two-pcs-with-onedrive)
+12. [Settings Reference](#settings-reference)
+13. [Database Backup](#database-backup)
+14. [Troubleshooting](#troubleshooting)
+15. [File Overview](#file-overview)
 
 ---
 
@@ -32,6 +33,7 @@ Cadence is a local desktop app built for Educational Therapists and other solo p
 - **Generates professional PDF invoices** with every session listed as a line item at your configured rate
 - **Sends invoices by email** directly through your Microsoft 365 account, saved to your Sent Items
 - **Tracks payment status** and gives you a full annual income summary for tax reporting
+- **Bulk-imports students** from a pre-formatted Excel spreadsheet
 
 Everything runs entirely on your own PC. No subscription, no cloud service, no data leaves your machine.
 
@@ -41,70 +43,76 @@ Everything runs entirely on your own PC. No subscription, no cloud service, no d
 
 | Requirement | Details |
 |---|---|
-| **Operating System** | Windows 10 or Windows 11 |
-| **Python** | 3.10 or later — [Download here](https://www.python.org/downloads/) |
+| **Operating System** | Windows 10 or Windows 11 (64-bit) |
 | **Microsoft 365 account** | Any personal or organizational account with Outlook calendar access |
 | **Azure app registration** | Free, one-time setup — instructions below |
 
-> **Python installation tip:** When the Python installer opens, check **"Add Python to PATH"** before clicking Install. If you missed this, uninstall Python and reinstall with that option checked.
+> **Developer / source mode only:** Python 3.10 or later is required to run from source. The installer includes everything — Python is **not** needed when using the installer.
 
 ---
 
 ## Installation
 
-### Option A — Standalone App (Recommended)
+### Option A — One-Click Installer (Recommended)
 
-Builds a self-contained `Cadence.exe` with no command window and a system tray icon. Run the build once; after that just double-click the `.exe`.
+The installer requires no Python, no command prompt, and no technical setup.
 
-**Step 1 — Copy the cadence folder to your PC**
+**Step 1 — Download the installer**
 
-Place the `cadence` folder somewhere permanent, for example:
-```
-C:\cadence\
-```
-Avoid putting it in a temporary location — the database and PDF files will be stored here.
+Get `Cadence_Setup_1.0.0.exe` from the releases page (or from whoever provided your copy).
 
-**Step 2 — Install Python dependencies**
+**Step 2 — Run the installer**
 
-Double-click **`setup.bat`**. A window opens briefly, downloads packages, and closes. This only needs to run once (or again if you reinstall Python).
+Double-click `Cadence_Setup_1.0.0.exe`. The installer will:
+- Ask where to install (default: `%LOCALAPPDATA%\Cadence` — no admin rights needed)
+- Offer an optional Desktop shortcut
+- Offer an optional "Launch Cadence when Windows starts" shortcut
+- Complete in under 30 seconds
 
-**Step 3 — Build the executable**
+**Step 3 — Launch Cadence**
 
-Double-click **`build.bat`**. This takes approximately 60 seconds and requires an internet connection. When finished you will see:
-```
-dist\Cadence\
-    Cadence.exe
-    (supporting files)
-```
+After installation, click **Launch Cadence now** on the final screen, or use the Start Menu shortcut.
 
-**Step 4 — Launch Cadence**
-
-Open `dist\Cadence\` and double-click **`Cadence.exe`**. On first launch:
-- Your browser opens automatically to the Cadence interface
-- A blue diamond icon appears in your **Windows system tray** (bottom-right corner of the taskbar)
-
-**From now on**, just double-click `Cadence.exe` to start the app. No command window ever appears.
-
-> **Tip:** Create a shortcut to `Cadence.exe` on your Desktop for quick access. You can also copy the entire `dist\Cadence\` folder to OneDrive or a USB drive — the database and settings travel with it.
+On first launch:
+- Your default browser opens automatically to the Cadence interface
+- A **blue diamond icon** appears in the Windows system tray (bottom-right corner of your taskbar)
 
 **Using the tray icon:**
 
-Right-click the blue diamond in the system tray to:
-- **Open Cadence** — opens the browser interface
+Right-click the blue diamond at any time to:
+- **Open Cadence** — re-opens the browser interface
 - **Stop Cadence** — shuts the app down completely
+
+> **From now on:** click the Start Menu shortcut (or Desktop shortcut if you created one) to start Cadence. No command window ever appears.
 
 ---
 
-### Option B — Developer Mode
+### Option B — Portable Build (Advanced)
 
-Run directly from source without building an `.exe`. Requires Python to be installed.
+Builds a self-contained `dist\Cadence\Cadence.exe` folder you can put anywhere — including OneDrive or a USB drive.
 
-Double-click **`launch.bat`**:
-- Browser opens automatically at `http://127.0.0.1:5000`
-- Tray icon appears in the system tray
-- No command window is visible
+**Requirements:** Python 3.10+, Git (optional)
 
-Use this option if you are making changes to the code or prefer not to build.
+1. Copy the `cadence` source folder to your PC
+2. Double-click **`setup.bat`** — installs Python dependencies (runs once)
+3. Double-click **`build.bat`** — builds the `.exe` (~60–120 sec) and, if [Inno Setup 6](https://jrsoftware.org/isdl.php) is installed, also produces the full installer
+
+Output:
+```
+dist\Cadence\Cadence.exe          ← portable, run directly
+dist\Cadence_Setup_1.0.0.exe      ← installer (if Inno Setup is present)
+```
+
+---
+
+### Option C — Developer Mode
+
+Run directly from source without building anything. Requires Python 3.10+.
+
+1. Run `setup.bat` to install packages
+2. Double-click **`launch.bat`**
+
+Browser opens at `http://127.0.0.1:5000`. Use this if you're making code changes.
 
 ---
 
@@ -115,210 +123,182 @@ Cadence connects to your Microsoft 365 calendar and email using the **Microsoft 
 ### Step 1 — Create the registration
 
 1. Open [portal.azure.com](https://portal.azure.com) and sign in with your Microsoft 365 account
-2. In the search bar at the top, type **App registrations** and click it
+2. Search for **App registrations** and click it
 3. Click **+ New registration**
 4. Fill in the form:
-   - **Name:** `Cadence` (or anything you like)
+   - **Name:** `Cadence` (or any name you like)
    - **Supported account types:** Select **"Accounts in any organizational directory and personal Microsoft accounts"**
    - **Redirect URI:** Leave blank
 5. Click **Register**
 
 ### Step 2 — Enable public client flows
 
-1. In your new app registration, click **Authentication** in the left menu
-2. Scroll down to **Advanced settings**
-3. Under **Allow public client flows**, toggle to **Yes**
+1. Click **Authentication** in the left menu
+2. Scroll to **Advanced settings**
+3. Toggle **Allow public client flows** to **Yes**
 4. Click **Save**
 
 ### Step 3 — Add API permissions
 
-1. Click **API permissions** in the left menu
-2. Click **+ Add a permission**
-3. Click **Microsoft Graph** → **Delegated permissions**
-4. Search for and check **`Calendars.ReadWrite`**
-5. Click **Add a permission** again → **Microsoft Graph** → **Delegated permissions**
-6. Search for and check **`Mail.Send`**
-7. Click **Add permissions**
+1. Click **API permissions** → **+ Add a permission** → **Microsoft Graph** → **Delegated permissions**
+2. Search for and add **`Calendars.ReadWrite`**
+3. Repeat and add **`Mail.Send`**
+4. Click **Add permissions**
 
-> You do **not** need to click "Grant admin consent" — delegated permissions work without it for personal accounts.
+> You do **not** need "Grant admin consent" for personal accounts.
 
 ### Step 4 — Copy your Client ID
 
-1. Click **Overview** in the left menu
-2. Copy the **Application (client) ID** — it looks like: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+1. Click **Overview**
+2. Copy the **Application (client) ID** (looks like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
 
-You will paste this into Cadence in the next section.
+You'll paste this into Cadence → Settings → Microsoft 365.
 
 ---
 
 ## First Time Configuration
 
-Open Cadence and go to **Settings** in the sidebar. Complete these sections in order.
+Open Cadence and click **Settings** in the sidebar. Work through the tabs in order.
 
-### 1. Business Information & Rate
+### Business Tab
 
 | Field | What to enter |
 |---|---|
-| **Your Name** | Your full name as it should appear on invoices |
+| **Your Name** | Your full name as it appears on invoices |
 | **Title / Credentials** | e.g. `Educational Therapist, M.Ed.` — printed below your name |
-| **Email** | Your business email address |
-| **Phone** | Your phone number |
-| **Street Address** | Printed in the invoice header and payment instructions |
-| **City / State / Zip** | Your business location |
+| **Email** | Your business email |
+| **Phone** | Your business phone |
+| **Street Address / City / State / Zip** | Printed in the invoice header |
 | **Per-Session Rate ($)** | Your standard flat rate per session (e.g. `150.00`) |
-| **Venmo Handle** | e.g. `@Your-Name` — printed in payment instructions on invoices |
-| **Idle Timeout** | How long Cadence waits before auto-closing when inactive (see [Idle Timeout](#idle-timeout)) |
+| **Venmo Handle** | e.g. `@Your-Name` — printed in payment instructions |
+| **Idle Timeout** | Auto-close Cadence after inactivity (recommended: 30 min for two-PC setups) |
 
-Click **Save Settings** when done.
+Click **Save Settings**.
 
-### 2. Microsoft 365
+### Microsoft 365 Tab
 
-1. Paste your **Azure App Client ID** (from the registration above) into the field
-2. Select your **Timezone** from the dropdown (e.g. *Central (CT)*)
+1. Paste your **Azure App Client ID**
+2. Select your **Timezone**
 3. Click **Save**
 4. Click **Connect Microsoft 365**
-   - A browser tab opens with a Microsoft sign-in page
-   - A code appears in Cadence — enter it when prompted
+   - A browser tab opens; a code appears in Cadence — enter it when prompted
    - Sign in with your Microsoft 365 account
-   - Cadence detects the sign-in automatically and shows **"Connected"**
+   - Cadence detects the sign-in and shows **Connected**
 
-> If the connection tab closes before you finish, click **Connect Microsoft 365** again to get a fresh code.
+### Calendars Tab
 
-### 3. Calendars
-
-1. Click **Refresh from Outlook** — Cadence scans your Microsoft 365 account and lists all your calendars
-2. Toggle **Scan** on for each calendar that contains student appointments
-   - You can enable multiple calendars — Cadence checks all enabled ones when searching for sessions
-3. Optionally mark one calendar as **Default** — this pre-selects it in certain views
+1. Click **Refresh from Outlook** — Cadence lists all your calendars
+2. Toggle **Scan** on for calendars that contain student appointments
+3. Optionally mark one as **Default**
 4. Click **Save Calendar Preferences**
 
-### 4. Storage Paths
+### Storage Tab
 
-Configure where Cadence saves files:
-
-| Field | Default | Notes |
-|---|---|---|
-| **Database File (.db)** | `cadence\cadence.db` | Stores all students, invoices, and settings |
-| **Invoice PDF Folder** | `C:\invoice` | PDFs are saved here in subfolders by month (e.g. `April 2026\`) |
-
-> **OneDrive tip:** Point both paths to a shared OneDrive folder so your data stays in sync across two PCs. See [Using Two PCs with OneDrive](#using-two-pcs-with-onedrive) for full instructions.
-
-Click **Save Storage Paths**. If you change the database path, your existing data is automatically copied to the new location. Restart Cadence after saving.
-
----
-
-## Using Two PCs with OneDrive
-
-If you work from two computers (e.g. home and office), you can share a single Cadence database between them using OneDrive.
-
-### Setup
-
-1. On your primary PC, go to **Settings → Storage Paths**
-2. Set the **Database File** path to a folder inside OneDrive, for example:
-   ```
-   C:\Users\You\OneDrive\Cadence\cadence.db
-   ```
-3. Set the **Invoice PDF Folder** to another OneDrive folder:
-   ```
-   C:\Users\You\OneDrive\Invoices
-   ```
-4. Click **Save Storage Paths** — Cadence copies the database to the new location
-5. Repeat steps 1–4 on your second PC using the same OneDrive paths
-
-### Important: Only run Cadence on one PC at a time
-
-Cadence uses a SQLite database, which is not designed for simultaneous access from multiple machines. If both PCs run Cadence at the same time and both try to save data, you may get errors or data may not save correctly.
-
-**Best practice:** Use the **Idle Timeout** setting (Settings → Business Information → Idle Timeout) so Cadence automatically shuts down after a period of inactivity. This ensures the first PC closes before you open the app on the second.
-
-### Idle Timeout
-
-The Idle Timeout setting automatically closes Cadence after a set period of inactivity:
-
-| Option | Best for |
+| Field | Notes |
 |---|---|
-| **Never** | Single PC only |
-| **15 minutes** | Frequent PC switching |
-| **30 minutes** | Recommended for two-PC setups |
-| **1 hour** | Occasional PC switching |
-| **2 hours** | Long work sessions |
+| **Database File (.db)** | Where `cadence.db` is stored. Changing this copies your data automatically. Restart required. |
+| **Invoice PDF Folder** | Where PDFs are saved. Cadence creates month subfolders (e.g. `April 2026\`) automatically. |
 
-When Cadence auto-closes, it shuts down cleanly — the same as clicking **Stop Cadence** from the tray icon. The next time you open it on either PC, the latest data from OneDrive will load automatically.
+> **OneDrive tip:** Point both to a shared OneDrive folder to sync across two PCs. See [Using Two PCs with OneDrive](#using-two-pcs-with-onedrive).
+
+### Backup Tab
+
+Click **Back Up Now** to save a timestamped copy of your database. Do this before any major changes.
 
 ---
 
-## Adding Students
+## Importing Students from Excel
 
-Go to **Students** in the sidebar and click **Add Student**.
+If you have many students to add, the Excel import is the fastest way.
 
-### Student Fields
+### Step 1 — Download the template
+
+Go to **Settings → Import tab** and click **cadence_students_template.xlsx**.
+
+Open the file in Excel. You'll see:
+- **Row 1** — column headers (blue = required, dark = optional)
+- **Row 2** — hints for each field
+- **Row 3** — a sample student you can delete
+- **Services Reference sheet** — lists all valid service key values
+
+### Step 2 — Fill in your students
+
+Start entering data from **row 3** (or row 4 if you keep the sample). Only **Name** and **Initials** are required.
+
+**Important fields:**
+
+| Column | Notes |
+|---|---|
+| **Name** | Full student name — must be unique |
+| **Initials** | 2–3 letters matching exactly what appears in your calendar appointment titles |
+| **Grade** | Use the dropdown: K, 1st–12th, College, Other |
+| **Birthday** | Format: `YYYY-MM-DD` (e.g. `2015-03-22`) |
+| **Services** | Comma-separated keys from the Services Reference sheet (e.g. `reading,spelling`) |
+| **Intake Complete / ROI Complete** | Type `YES` or `NO` (use the dropdown) |
+| **Per-Session Rate** | Leave blank to use your default rate from Settings |
+
+### Step 3 — Upload the file
+
+1. Back in **Settings → Import**, click **Choose File** and select your completed `.xlsx`
+2. Click **Import Students**
+3. A summary message confirms how many students were added, skipped (already exist), or had errors
+
+---
+
+## Adding Students Manually
+
+Go to **Students** in the sidebar and click **+ Add Student**.
+
+### Key Fields
 
 | Field | Description |
 |---|---|
-| **Full Name** | Used on invoices and for naming saved PDF files |
-| **Initials** | **Exactly** as they appear in your Microsoft 365 calendar appointment titles — spacing and punctuation matter (`AJ` vs `A.J.` are different) |
-| **Grade / School** | For your records only — not printed on invoices |
-| **Parent / Guardian 1 & 2** | Names printed in the "Bill To" block on invoices |
-| **Parent Address** | Street, city, state, zip — printed on invoices |
-| **Email** | Used when sending invoices via Microsoft 365 — required to enable the Send button |
-| **Per-Session Rate ($)** | Leave blank to use the global rate; enter a value to override for this student only |
-| **Services** | Check all applicable service areas — for your records, not printed on invoices |
-| **Diagnosis** | Clinical notes — not printed on invoices |
-| **Service Start / End Date** | For your records |
-| **Test Date** | For your records |
-| **Intake Complete / ROI Complete** | Administrative checkboxes |
+| **Full Name** | Used on invoices and PDF filenames |
+| **Initials** | Must match exactly what appears in your calendar appointment titles — case-sensitive |
+| **Parent 1 & 2 Name** | Printed in the "Bill To" block on invoices |
+| **Parent Address / City / State / Zip** | Printed on invoices |
+| **Email** | Required to enable the **Send via Email** button |
+| **Per-Session Rate ($)** | Leave blank to use the global rate from Settings |
+| **Services** | Check all applicable areas — internal record only |
 
 Click **Save Student**.
 
 ### Tips
 
-- **Initials are case-sensitive.** Open a calendar appointment and check exactly how the student's initials appear in the title (e.g. `AJ` not `Aj`).
-- **Archiving vs. deleting:** When a student is no longer active, use **Archive** rather than Delete. Archived students are hidden from active lists but their invoice history is preserved.
-- **Per-student rate:** If a student has a different rate than your default, set it here. It will be used automatically when generating invoices for that student.
+- **Initials are case-sensitive.** Open a real calendar appointment to copy the initials exactly.
+- **Archive, don't delete** inactive students — their invoice history is preserved.
+- **Per-student rate** overrides the global rate only for that student.
 
 ---
 
 ## Creating an Invoice
 
-### Step 1 — Select the student and period
+### Step 1 — Select student and period
 
 1. Click **New Invoice** in the sidebar
-2. Choose the **Student** from the dropdown
-3. Select the **Month** and **Year**
-4. Click **Find Sessions in Outlook**
+2. Choose the **Student**, **Month**, and **Year**
+3. Click **Find Sessions in Outlook**
 
-Cadence scans all your enabled Microsoft 365 calendars for appointments whose title contains that student's initials. Results appear within a few seconds.
+Cadence scans all enabled calendars for appointments whose title contains the student's initials.
 
 ### Step 2 — Review sessions
 
-Each matching appointment appears as a row with:
-- **Date** of the session
-- **Time** (start and end)
-- **Duration** in hours
-- **Rate** (the student's rate, or global rate if no override)
-- **Session Total**
+Each matching appointment shows date, time, duration, rate, and total. **Uncheck** any sessions you don't want to bill (e.g. a cancelled session).
 
-**Uncheck any sessions you do not want to bill** — for example, a cancelled session that was rescheduled.
+### Step 3 — Adjustments (optional)
 
-A running **total** updates at the bottom as you check and uncheck rows.
-
-### Step 3 — Add adjustments (optional)
-
-**Late Fee:** Click **Add Late Fee**, enter the dollar amount and a description (e.g. *Late payment fee*). It appears as a separate line item on the invoice.
-
-**Credit:** Click **Add Credit**, enter the amount and description (e.g. *Prepaid session credit*). It is subtracted from the invoice total and shown in green.
+- **Add Late Fee** — adds a dollar amount as a separate line item
+- **Add Credit** — subtracts an amount (shown in green on the invoice)
 
 ### Step 4 — Generate
 
-Click **Generate Invoice & Save PDF**.
-
-Cadence:
+Click **Generate Invoice & Save PDF**. Cadence:
 1. Assigns the next sequential invoice number
-2. Saves the invoice to the database
-3. Generates a PDF and saves it to your configured PDF folder under a subfolder named for the month (e.g. `April 2026\Alex Jones.pdf`)
-4. Takes you directly to the Invoice Detail page
+2. Saves the invoice record to the database
+3. Generates a PDF in your configured folder under a month subfolder (e.g. `April 2026\Alex Jones.pdf`)
+4. Opens the Invoice Detail page
 
-> **Duplicate warning:** If an invoice already exists for that student and month, Cadence warns you before creating a second one.
+> **Duplicate warning:** If an invoice already exists for that student and month, Cadence asks before creating a second one.
 
 ---
 
@@ -326,157 +306,131 @@ Cadence:
 
 ### Invoice History
 
-Go to **Invoice History** in the sidebar to see all invoices.
+Click **Invoice History** in the sidebar.
 
-**Filters:** Use the dropdowns at the top to filter by student, year, or status (Paid / Unpaid). The filter bar stays visible as you scroll. Click **Clear** to reset all filters.
+- **Filter** by student, year, or status using the dropdowns
+- **Sort** any column by clicking the column header (↑/↓ arrows indicate sort direction)
+- **Totals row** at the bottom shows aggregate hours and amount for visible invoices
+- **⋯ menu** on each row — click to View, Open PDF, or Open Folder
 
 ### Invoice Detail Page
 
-Click **View** on any invoice to open its detail page.
-
-| Button | What It Does |
+| Action | Description |
 |---|---|
-| **Mark as Paid** | Marks the invoice as paid and records today's date. Click again to toggle back to unpaid. |
-| **Send via Email** | Attaches the PDF and sends it to the student's parent email via Microsoft 365. The email is saved to your Sent Items. Disabled if no email is on file for the student. |
-| **Save PDF** | Opens the saved PDF in your default PDF viewer. |
-| **Open Folder** | Opens the folder in Windows Explorer where the PDF is saved. |
-| **Delete** | Removes the invoice record from Cadence. Does **not** delete the PDF file from disk. |
+| **Mark as Paid / ✓ Paid** | Toggles paid status. Shows a confirmation toast. |
+| **Send via Email** | Sends the PDF via Microsoft 365. Shows a success or error toast. |
+| **Save PDF** | Opens the PDF in your default viewer. |
+| **Open Folder** | Opens the folder in Windows Explorer. |
+| **Delete** | Removes the invoice record. Does **not** delete the PDF from disk. |
 
 ### Invoice Numbers
 
-Invoices are numbered sequentially starting at **5550** (e.g. 5550, 5551, 5552…). The counter never resets, even if you delete invoices.
+Invoices are numbered sequentially starting at **5550** (e.g. 5550, 5551, 5552…). The counter never resets.
 
 ---
 
 ## Annual Summary & CSV Export
 
-Go to **Summary** in the sidebar for a full-year income overview.
-
-Use the **year dropdown** at the top-right to switch between years.
-
-### What you see
+Click **Summary** in the sidebar.
 
 **Stat cards:**
-- **Total Billed** — sum of all invoice totals for the year
-- **Collected** — total from paid invoices (shown in green)
-- **Outstanding** — unpaid balance remaining (shown in amber)
+- **Total Billed** — all invoice totals for the year
+- **Collected** — paid invoices (progress bar shows % of billed collected)
+- **Outstanding** — unpaid balance
 
-**Monthly Breakdown table:**
-Shows invoices, hours, billed, collected, and outstanding for each month — useful for spotting slow-pay clients or planning cash flow.
+**Monthly Breakdown** and **By Student** tables show hours, billed, collected, and outstanding.
 
-**By Student table:**
-The same breakdown per student — useful for understanding which clients make up the bulk of your income.
+Use the **year dropdown** to switch years. Click **Export CSV** to download all invoice data for tax preparation.
 
-### Exporting for taxes
+---
 
-Click **Export CSV** to download a spreadsheet-compatible file with all invoice data for the year. Open it in Excel or Google Sheets for tax preparation.
+## Using Two PCs with OneDrive
+
+Share one database between a home PC and an office PC using OneDrive.
+
+### Setup
+
+1. **Settings → Storage tab** on PC 1 — set both paths to a OneDrive folder:
+   ```
+   Database:   C:\Users\You\OneDrive\Cadence\cadence.db
+   PDF Folder: C:\Users\You\OneDrive\Invoices
+   ```
+2. Click **Save Storage Paths** — Cadence copies the database automatically
+3. Repeat on PC 2 using the same paths
+
+### Rules
+
+- **Never run Cadence on both PCs at the same time** — SQLite isn't designed for concurrent multi-machine access
+- Set **Idle Timeout** to 30 minutes so Cadence auto-closes when you walk away from one PC
+
+| Idle Timeout | Best for |
+|---|---|
+| Never | Single PC only |
+| 15 min | Frequent switching |
+| 30 min | Recommended for two-PC |
+| 1 hour | Occasional switching |
+| 2 hours | Long sessions |
 
 ---
 
 ## Settings Reference
 
-All settings are accessed via **Settings** in the sidebar.
+All settings live under **Settings** in the sidebar, organized into tabs.
 
-### Business Information & Rate
-
-Printed on every invoice. Keep this accurate — changes take effect on the next invoice generated.
-
-### Microsoft 365
-
-| Field | Description |
+| Tab | What's here |
 |---|---|
-| **Azure App Client ID** | The GUID from your Azure app registration |
-| **Timezone** | Used to display calendar event times correctly |
-| **Connect / Disconnect** | Authenticates your Microsoft 365 account via a browser sign-in |
-
-Re-authenticate any time by clicking **Connect Microsoft 365** again. Your token is refreshed automatically during normal use.
-
-### Storage Paths
-
-| Field | Description |
-|---|---|
-| **Database File (.db)** | Full path to `cadence.db`. Changing this copies your data to the new location automatically. Restart required. |
-| **Invoice PDF Folder** | Root folder for saved PDFs. Cadence creates month subfolders automatically (e.g. `April 2026\`). |
-
-### Database Backup
-
-Click **Back Up Now** to create a timestamped copy of your database in the same folder:
-```
-cadence_backup_20260419_143022.db
-```
-Do this before any major changes (updating the app, moving files, etc.).
-
-### Outlook Calendars
-
-| Control | Description |
-|---|---|
-| **Refresh from Outlook** | Re-scans your Microsoft 365 account for calendars |
-| **Scan toggle** | Enable/disable each calendar for session searches |
-| **Default radio** | Pre-selects one calendar in certain views |
+| **Business** | Name, title, contact info, rate, Venmo, idle timeout |
+| **Storage** | Database file path and PDF folder path |
+| **Microsoft 365** | Azure Client ID, timezone, connect/disconnect |
+| **Calendars** | Enable/disable calendars, set default |
+| **Backup** | One-click database backup |
+| **Import** | Download Excel template, upload student file |
 
 ---
 
 ## Database Backup
 
-Regular backups protect against accidental data loss.
-
 **To back up:**
-1. Go to **Settings → Database Backup**
-2. Click **Back Up Now**
-3. A file named `cadence_backup_YYYYMMDD_HHMMSS.db` is saved beside your database
+1. **Settings → Backup tab** → click **Back Up Now**
+2. A file named `cadence_backup_YYYYMMDD_HHMMSS.db` is saved next to your database
 
-**To restore from a backup:**
-1. Close Cadence (right-click tray icon → Stop Cadence)
-2. In File Explorer, rename your current `cadence.db` to `cadence_old.db`
-3. Rename the backup file to `cadence.db`
+**To restore from backup:**
+1. Right-click tray icon → **Stop Cadence**
+2. In File Explorer, rename `cadence.db` → `cadence_old.db`
+3. Rename the backup file → `cadence.db`
 4. Reopen Cadence
 
-**Recommended schedule:** Back up once a week, or immediately after generating a batch of invoices.
+**Recommended:** Back up weekly, or immediately after a batch of invoices.
 
 ---
 
 ## Troubleshooting
 
 ### "Microsoft 365 is not configured"
-You haven't connected to Microsoft 365 yet, or the Azure App Client ID is missing.
-- Go to **Settings → Microsoft 365**
-- Enter your Azure App Client ID and click **Save**
-- Click **Connect Microsoft 365** and complete the sign-in
+Go to **Settings → Microsoft 365 tab** → enter your Azure App Client ID → click Save → click **Connect Microsoft 365**.
 
 ### "Could not reach Microsoft 365" / sessions not loading
-Your Microsoft 365 token may have expired.
-- Go to **Settings → Microsoft 365** — check whether the status shows Connected
-- If disconnected, click **Connect Microsoft 365** to re-authenticate
-- Make sure your PC has an active internet connection
+Your token may have expired. Go to **Settings → Microsoft 365** — if it shows Disconnected, click **Connect Microsoft 365** to re-authenticate.
 
 ### "No sessions found"
-Cadence searched your calendars but found no matching appointments.
-- Check that the student's **Initials** in Cadence match **exactly** what appears in your calendar appointment titles (including capitalization and punctuation)
+- Check the student's **Initials** match exactly what's in the calendar appointment title (case-sensitive, e.g. `AJ` ≠ `A.J.`)
 - Confirm the correct calendars have **Scan** toggled on in **Settings → Calendars**
-- Verify the appointments fall within the selected month and year — not the week before or after
+- Make sure the appointments fall within the selected month and year
 
-### "Send via Email" button is greyed out
-The student has no email address saved.
-- Go to **Students**, find the student, click **Edit**
-- Add the parent email address and click **Save Student**
+### "Send via Email" is greyed out
+The student has no email address. Go to **Students → Edit** → add the parent email.
 
-### Browser does not open automatically
-- Open your browser manually and go to: `http://127.0.0.1:5000`
-- Check that the Cadence tray icon is visible in the Windows system tray (bottom-right of taskbar)
-- If the tray icon is gone, reopen `Cadence.exe`
+### Browser doesn't open automatically
+Open your browser and go to `http://127.0.0.1:5000`. Check the tray icon is visible.
 
-### App won't start
-- Double-click **`setup.bat`** again to reinstall Python packages
-- Confirm Python was installed with **"Add to PATH"** checked — if not, uninstall and reinstall Python with that option enabled
-- Try right-clicking `Cadence.exe` → **Run as administrator**
+### App closes on its own
+Normal behaviour when the Idle Timeout fires. Just reopen Cadence from the Start Menu or tray icon.
 
-### Cadence closed on its own
-If the Idle Timeout is set (Settings → Business Information → Idle Timeout), Cadence automatically shuts down after the configured period of inactivity. This is normal behavior. Simply reopen `Cadence.exe`.
+### Database locked / save errors
+Cadence is running on two PCs simultaneously. Close it on one PC first. Enable Idle Timeout (30 min).
 
-### Database is locked / save errors
-This happens when Cadence is running on two PCs simultaneously against the same OneDrive database.
-- Close Cadence on one PC before opening it on the other
-- Set an **Idle Timeout** (30 minutes recommended) so Cadence auto-closes when inactive
+### Installer won't run
+Try right-clicking `Cadence_Setup_1.0.0.exe` → **Run as administrator**. Alternatively use the portable build: copy `dist\Cadence\Cadence.exe` directly.
 
 ---
 
@@ -484,22 +438,25 @@ This happens when Cadence is running on two PCs simultaneously against the same 
 
 ```
 cadence/
-├── launch.bat          ← Double-click to start (developer mode)
-├── build.bat           ← Run once to build the standalone .exe
-├── setup.bat           ← Run once during first-time setup
-├── main.py             ← Entry point: starts Flask + system tray icon
-├── app.py              ← Main application and all page routes
-├── database.py         ← Local SQLite database logic
-├── config.py           ← Paths and settings loader
-├── graph_auth.py       ← Microsoft 365 OAuth authentication
-├── outlook.py          ← Calendar and email via Microsoft Graph API
-├── pdf_generator.py    ← PDF invoice builder
-├── create_icon.py      ← Generates the app icon
-├── cadence.spec        ← PyInstaller build spec (used by build.bat)
-├── requirements.txt    ← Python package list (used by setup.bat)
-├── cadence.db          ← Created automatically on first launch
-├── templates/          ← HTML pages
-└── static/             ← CSS styles and JavaScript
+├── Cadence_Setup_1.0.0.exe  ← One-click installer (produced by build.bat)
+├── build.bat                ← Builds the .exe and installer
+├── setup.bat                ← First-time dev setup (installs Python packages)
+├── launch.bat               ← Developer mode (run from source)
+├── cadence.spec             ← PyInstaller build configuration
+├── cadence.iss              ← Inno Setup installer script
+├── file_version_info.txt    ← Windows .exe version metadata
+├── main.py                  ← Entry point: Flask + system tray
+├── app.py                   ← All page routes and business logic
+├── database.py              ← SQLite database layer
+├── config.py                ← Paths and settings loader
+├── graph_auth.py            ← Microsoft 365 OAuth (MSAL device flow)
+├── outlook.py               ← Calendar and email via Microsoft Graph API
+├── pdf_generator.py         ← ReportLab PDF invoice builder
+├── create_icon.py           ← Generates static/icon.ico
+├── requirements.txt         ← Python package list
+├── cadence.db               ← Created automatically on first launch
+├── templates/               ← Jinja2 HTML pages
+└── static/                  ← CSS, JavaScript, icons
 ```
 
 ---
