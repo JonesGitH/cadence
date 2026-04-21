@@ -62,14 +62,24 @@ set "ISCC="
 :: Check PATH first
 where iscc >nul 2>&1 && set "ISCC=iscc"
 
-:: Common install locations
+:: Use PowerShell to find ISCC.exe across all drives and all user-profile locations.
+:: This handles setups where the user profile or Program Files lives on a non-C: drive.
 if not defined ISCC (
-    for %%p in (
-        "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
-        "%ProgramFiles%\Inno Setup 6\ISCC.exe"
-        "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
-    ) do (
-        if exist %%p ( set "ISCC=%%~p" & goto :found_iscc )
+    for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command ^
+        "$found = $null; " ^
+        "$drives = (Get-PSDrive -PSProvider FileSystem).Root; " ^
+        "$username = $env:USERNAME; " ^
+        "foreach ($d in $drives) { " ^
+            "$paths = @(" ^
+                "'${d}Users\\$username\\AppData\\Local\\Programs\\Inno Setup 6\\ISCC.exe'," ^
+                "'${d}Program Files\\Inno Setup 6\\ISCC.exe'," ^
+                "'${d}Program Files (x86)\\Inno Setup 6\\ISCC.exe'" ^
+            "); " ^
+            "foreach ($p in $paths) { if (Test-Path $p) { $found = $p; break } } " ^
+            "if ($found) { break } " ^
+        "} " ^
+        "if ($found) { $found } else { '' }"`) do (
+        if not "%%i"=="" ( set "ISCC=%%i" )
     )
 )
 :found_iscc

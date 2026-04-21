@@ -81,41 +81,24 @@ Type: filesandordirs; Name: "{app}\__pycache__"
 Type: files;          Name: "{app}\*.log"
 
 [Code]
-// Ask the user whether to keep their data (cadence.db, config.txt) on uninstall.
+// On uninstall, ask whether to keep cadence.db and config.txt.
+function InitializeUninstall(): Boolean;
 var
-  KeepDataPage: TInputOptionWizardPage;
-
-procedure InitializeWizard();
+  Res: Integer;
 begin
-  if WizardForm <> nil then
+  Result := True;
+  Res := SuppressibleMsgBox(
+    'Do you want to keep your Cadence data?' + #13#10 + #13#10 +
+    'Click YES to keep your student records, invoices, and settings.' + #13#10 +
+    'Click NO to delete all Cadence data when uninstalling.',
+    mbConfirmation, MB_YESNO, IDYES);
+  if Res = IDNO then
   begin
-    KeepDataPage := CreateInputOptionPage(
-      wpReady,
-      'Existing Data',
-      'Cadence found a previous installation.',
-      'What would you like to do with your existing data?',
-      True, False,
-      ['Keep my data (students, invoices, settings)',
-       'Remove all data when uninstalling']);
-    KeepDataPage.Values[0] := True;
-  end;
-end;
-
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-var
-  DataDir: String;
-begin
-  if CurUninstallStep = usPostUninstall then
-  begin
-    DataDir := ExpandConstant('{app}');
-    // Only delete data files if user chose "Remove all data"
-    if not KeepDataPage.Values[0] then
-    begin
-      DeleteFile(DataDir + '\cadence.db');
-      DeleteFile(DataDir + '\cadence.db-journal');
-      DeleteFile(DataDir + '\cadence.db-wal');
-      DeleteFile(DataDir + '\cadence.db-shm');
-      DeleteFile(DataDir + '\config.txt');
-    end;
+    // User chose to delete data — remove data files after uninstall
+    DeleteFile(ExpandConstant('{app}\cadence.db'));
+    DeleteFile(ExpandConstant('{app}\cadence.db-journal'));
+    DeleteFile(ExpandConstant('{app}\cadence.db-wal'));
+    DeleteFile(ExpandConstant('{app}\cadence.db-shm'));
+    DeleteFile(ExpandConstant('{app}\config.txt'));
   end;
 end;
