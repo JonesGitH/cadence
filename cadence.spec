@@ -126,6 +126,16 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=True,
-    upx_exclude=[],
+    # Never UPX-compress the Python runtime or VC++ DLLs — UPX triggers
+    # antivirus false positives on these files and can cause "Failed to
+    # load Python DLL / The specified module could not be found" on machines
+    # that don't have the VC++ redistributable installed system-wide.
+    upx_exclude=[
+        'python*.dll',
+        'VCRUNTIME*.dll',
+        'MSVCP*.dll',
+        'ucrtbase.dll',
+        'api-ms-win-crt-*.dll',
+    ],
     name='Cadence',
 )

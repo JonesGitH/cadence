@@ -90,10 +90,14 @@ def student_import_template():
         ('test_date',       'Test Date',            14, 'YYYY-MM-DD'),
         ('parent1_name',    'Parent 1 Name',        22, 'Primary parent / guardian name.'),
         ('parent2_name',    'Parent 2 Name',        22, 'Second parent / guardian name.'),
-        ('parent_address',  'Street Address',       26, 'Billing street address.'),
-        ('parent_city',     'City',                 18, ''),
+        ('parent_address',  'Street Address',       26, 'Parent 1 billing street address.'),
+        ('parent_city',     'City',                 18, 'Parent 1 city.'),
         ('parent_state',    'State',                8,  '2-letter state code (e.g. TX)'),
-        ('parent_zip',      'Zip',                  10, ''),
+        ('parent_zip',      'Zip',                  10, 'Parent 1 zip.'),
+        ('parent2_address', 'Street Address (P2)',  26, 'Parent 2 billing street address.'),
+        ('parent2_city',    'City (P2)',             18, 'Parent 2 city.'),
+        ('parent2_state',   'State (P2)',            8,  '2-letter state code (e.g. TX)'),
+        ('parent2_zip',     'Zip (P2)',              10, 'Parent 2 zip.'),
         ('intake_complete', 'Intake Complete',      16, 'YES or NO'),
         ('roi_complete',    'ROI Complete',         14, 'YES or NO'),
         ('hourly_rate',     'Per-Session Rate',     16, 'Leave blank to use default rate from Settings.'),
@@ -159,6 +163,7 @@ def student_import_template():
         'test_date': '2025-08-15', 'parent1_name': 'Mary Smith',
         'parent2_name': 'John Smith', 'parent_address': '123 Oak St',
         'parent_city': 'Austin', 'parent_state': 'TX', 'parent_zip': '78701',
+        'parent2_address': '', 'parent2_city': '', 'parent2_state': '', 'parent2_zip': '',
         'intake_complete': 'YES', 'roi_complete': 'NO',
         'hourly_rate': '', 'notes': 'Works best with visual aids.',
     }
@@ -218,7 +223,8 @@ def import_students():
         'name', 'initials', 'email', 'phone', 'school', 'grade', 'birthday',
         'diagnosis', 'services', 'services_other', 'start_date', 'end_date',
         'test_date', 'parent1_name', 'parent2_name', 'parent_address',
-        'parent_city', 'parent_state', 'parent_zip', 'intake_complete',
+        'parent_city', 'parent_state', 'parent_zip', 'parent2_address',
+        'parent2_city', 'parent2_state', 'parent2_zip', 'intake_complete',
         'roi_complete', 'hourly_rate', 'notes',
     ]
 
@@ -310,8 +316,10 @@ def import_students():
                     (name, initials, email, phone, school, grade, birthday, diagnosis,
                      services, services_other, start_date, end_date, test_date,
                      parent1_name, parent2_name, parent_address, parent_city,
-                     parent_state, parent_zip, intake_complete, roi_complete, notes, hourly_rate)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                     parent_state, parent_zip, parent2_address, parent2_city,
+                     parent2_state, parent2_zip, intake_complete, roi_complete,
+                     notes, hourly_rate)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ''', (name, initials,
                   _cell(row, 'email'),      _cell(row, 'phone'),
                   _cell(row, 'school'),     _cell(row, 'grade'),
@@ -320,8 +328,10 @@ def import_students():
                   _date_cell(row, 'start_date'), _date_cell(row, 'end_date'),
                   _date_cell(row, 'test_date'),
                   _cell(row, 'parent1_name'), _cell(row, 'parent2_name'),
-                  _cell(row, 'parent_address'), _cell(row, 'parent_city'),
-                  _cell(row, 'parent_state'),   _cell(row, 'parent_zip'),
+                  _cell(row, 'parent_address'),  _cell(row, 'parent_city'),
+                  _cell(row, 'parent_state'),    _cell(row, 'parent_zip'),
+                  _cell(row, 'parent2_address'), _cell(row, 'parent2_city'),
+                  _cell(row, 'parent2_state'),   _cell(row, 'parent2_zip'),
                   intake, roi, _cell(row, 'notes'), hourly_rate))
             existing.add(name.strip().lower())
             added += 1

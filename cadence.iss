@@ -83,6 +83,39 @@ Type: filesandordirs; Name: "{app}\__pycache__"
 Type: files;          Name: "{app}\*.log"
 
 [Code]
+// Check that the Visual C++ 2015-2022 x64 Redistributable is installed.
+// python312.dll depends on VCRUNTIME140.dll; if it is missing from the
+// system the app will fail immediately with "Failed to load Python DLL".
+function VCRedistInstalled(): Boolean;
+var
+  Installed: Cardinal;
+begin
+  // Microsoft's official registry key for VC++ 2015-2022 x64 Redist
+  Result := RegQueryDWordValue(
+    HKLM,
+    'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64',
+    'Installed',
+    Installed) and (Installed = 1);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  Result := True;
+  if not VCRedistInstalled() then
+  begin
+    if MsgBox(
+      'Cadence requires the Microsoft Visual C++ 2015-2022 Redistributable (x64),' + #13#10 +
+      'which is not installed on this PC.' + #13#10 + #13#10 +
+      'Without it the app will fail to start.' + #13#10 + #13#10 +
+      'Download it free from Microsoft:' + #13#10 +
+      'https://aka.ms/vs/17/release/vc_redist.x64.exe' + #13#10 + #13#10 +
+      'Install it and then run this installer again.' + #13#10 + #13#10 +
+      'Continue installing anyway?',
+      mbConfirmation, MB_YESNO) = IDNO then
+      Result := False;
+  end;
+end;
+
 // On uninstall, ask whether to keep cadence.db and config.txt.
 function InitializeUninstall(): Boolean;
 var
