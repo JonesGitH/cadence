@@ -1,5 +1,6 @@
 """Authentication routes: unlock screen, forced password change, security settings."""
 import logging
+from urllib.parse import urlparse
 from flask import render_template, request, redirect, url_for, flash, session
 from app import app
 from database import (
@@ -28,7 +29,8 @@ def unlock():
             session.pop('force_change', None)
             log.info('Successful unlock')
             next_url = request.form.get('next', '').strip()
-            if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
+            parsed = urlparse(next_url)
+            if not next_url or parsed.netloc or parsed.scheme:
                 next_url = url_for('dashboard')
             return redirect(next_url)
         log.warning('Failed unlock attempt')

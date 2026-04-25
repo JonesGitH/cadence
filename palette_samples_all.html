@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All 96 Color Palettes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; padding: 40px 24px; }
+    h1 { color: #94a3b8; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 32px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
+
+    .card { background: #1e293b; border-radius: 14px; overflow: hidden; border: 1px solid #334155; }
+    .card-header { padding: 14px 18px 10px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: baseline; }
+    .card-num { font-size: 0.65rem; font-weight: 700; color: #64748b; letter-spacing: 0.08em; }
+    .card-name { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
+    .card-note { font-size: 0.65rem; color: #64748b; text-align: right; max-width: 160px; line-height: 1.3; }
+
+    /* Swatches */
+    .swatches { display: flex; padding: 12px 18px; gap: 8px; }
+    .sw { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+    .sw-box { width: 100%; height: 32px; border-radius: 6px; }
+    .sw-label { font-size: 0.55rem; color: #64748b; font-weight: 500; letter-spacing: 0.05em; }
+    .sw-hex { font-size: 0.6rem; color: #94a3b8; font-family: monospace; }
+
+    /* Mini mock UI */
+    .mock { margin: 0 18px 18px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+    .mock-nav { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+    .mock-nav-logo { font-size: 0.78rem; font-weight: 700; }
+    .mock-nav-links { display: flex; gap: 14px; }
+    .mock-nav-links span { font-size: 0.65rem; opacity: 0.7; }
+    .mock-nav-links span.active { opacity: 1; font-weight: 600; }
+
+    .mock-body { padding: 14px; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .mock-widget { border-radius: 8px; padding: 12px; }
+    .mock-widget-val { font-size: 1.2rem; font-weight: 800; }
+    .mock-widget-label { font-size: 0.6rem; margin-top: 2px; opacity: 0.7; }
+    .mock-widget-tag { display: inline-block; margin-top: 6px; font-size: 0.55rem; font-weight: 600; padding: 2px 6px; border-radius: 99px; }
+
+    .mock-footer { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); }
+    .mock-footer-text { font-size: 0.65rem; opacity: 0.7; }
+    .mock-btn { font-size: 0.65rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+<h1>96 Color Palettes — Cadence UI Preview</h1>
+<div class="grid" id="grid"></div>
+
+<script>
+const palettes = [
+  { n:1,  name:"SaaS (General)",               primary:"#2563EB", secondary:"#3B82F6", cta:"#F97316", bg:"#F8FAFC", text:"#1E293B", border:"#E2E8F0", note:"Trust blue + orange CTA" },
+  { n:2,  name:"Micro SaaS",                   primary:"#6366F1", secondary:"#818CF8", cta:"#10B981", bg:"#F5F3FF", text:"#1E1B4B", border:"#E0E7FF", note:"Indigo + emerald CTA" },
+  { n:3,  name:"E-commerce",                   primary:"#059669", secondary:"#10B981", cta:"#F97316", bg:"#ECFDF5", text:"#064E3B", border:"#A7F3D0", note:"Success green + urgency orange" },
+  { n:4,  name:"E-commerce Luxury",            primary:"#1C1917", secondary:"#44403C", cta:"#CA8A04", bg:"#FAFAF9", text:"#0C0A09", border:"#D6D3D1", note:"Premium dark + gold" },
+  { n:5,  name:"Service Landing Page",         primary:"#0EA5E9", secondary:"#38BDF8", cta:"#F97316", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Sky blue + warm CTA" },
+  { n:6,  name:"B2B Service",                  primary:"#0F172A", secondary:"#334155", cta:"#0369A1", bg:"#F8FAFC", text:"#020617", border:"#E2E8F0", note:"Professional navy" },
+  { n:7,  name:"Financial Dashboard",          primary:"#0F172A", secondary:"#1E293B", cta:"#22C55E", bg:"#020617", text:"#F8FAFC", border:"#334155", note:"Dark bg + green indicators" },
+  { n:8,  name:"Analytics Dashboard",          primary:"#1E40AF", secondary:"#3B82F6", cta:"#F59E0B", bg:"#F8FAFC", text:"#1E3A8A", border:"#DBEAFE", note:"Blue data + amber highlights" },
+  { n:9,  name:"Healthcare App",               primary:"#0891B2", secondary:"#22D3EE", cta:"#059669", bg:"#ECFEFF", text:"#164E63", border:"#A5F3FC", note:"Calm cyan + health green" },
+  { n:10, name:"Educational App",              primary:"#4F46E5", secondary:"#818CF8", cta:"#F97316", bg:"#EEF2FF", text:"#1E1B4B", border:"#C7D2FE", note:"Playful indigo + energetic orange" },
+  { n:11, name:"Creative Agency",              primary:"#EC4899", secondary:"#F472B6", cta:"#06B6D4", bg:"#FDF2F8", text:"#831843", border:"#FBCFE8", note:"Bold pink + cyan accent" },
+  { n:12, name:"Portfolio / Personal",         primary:"#18181B", secondary:"#3F3F46", cta:"#2563EB", bg:"#FAFAFA", text:"#09090B", border:"#E4E4E7", note:"Monochrome + blue accent" },
+  { n:13, name:"Gaming",                       primary:"#7C3AED", secondary:"#A78BFA", cta:"#F43F5E", bg:"#0F0F23", text:"#E2E8F0", border:"#4C1D95", note:"Neon purple + rose action" },
+  { n:14, name:"Government / Public Service",  primary:"#0F172A", secondary:"#334155", cta:"#0369A1", bg:"#F8FAFC", text:"#020617", border:"#E2E8F0", note:"High contrast navy" },
+  { n:15, name:"Fintech / Crypto",             primary:"#F59E0B", secondary:"#FBBF24", cta:"#8B5CF6", bg:"#0F172A", text:"#F8FAFC", border:"#334155", note:"Gold trust + purple tech" },
+  { n:16, name:"Social Media App",             primary:"#E11D48", secondary:"#FB7185", cta:"#2563EB", bg:"#FFF1F2", text:"#881337", border:"#FECDD3", note:"Vibrant rose + engagement blue" },
+  { n:17, name:"Productivity Tool",            primary:"#0D9488", secondary:"#14B8A6", cta:"#F97316", bg:"#F0FDFA", text:"#134E4A", border:"#99F6E4", note:"Teal focus + action orange" },
+  { n:18, name:"Design System / Component",    primary:"#4F46E5", secondary:"#6366F1", cta:"#F97316", bg:"#EEF2FF", text:"#312E81", border:"#C7D2FE", note:"Indigo brand + doc hierarchy" },
+  { n:19, name:"AI / Chatbot Platform",        primary:"#7C3AED", secondary:"#A78BFA", cta:"#06B6D4", bg:"#FAF5FF", text:"#1E1B4B", border:"#DDD6FE", note:"AI purple + cyan" },
+  { n:20, name:"NFT / Web3 Platform",          primary:"#8B5CF6", secondary:"#A78BFA", cta:"#FBBF24", bg:"#0F0F23", text:"#F8FAFC", border:"#4C1D95", note:"Purple tech + gold value" },
+  { n:21, name:"Creator Economy",              primary:"#EC4899", secondary:"#F472B6", cta:"#F97316", bg:"#FDF2F8", text:"#831843", border:"#FBCFE8", note:"Creator pink + orange" },
+  { n:22, name:"Sustainability / ESG",         primary:"#059669", secondary:"#10B981", cta:"#0891B2", bg:"#ECFDF5", text:"#064E3B", border:"#A7F3D0", note:"Nature green + ocean blue" },
+  { n:23, name:"Remote Work / Collab",         primary:"#6366F1", secondary:"#818CF8", cta:"#10B981", bg:"#F5F3FF", text:"#312E81", border:"#E0E7FF", note:"Calm indigo + success green" },
+  { n:24, name:"Mental Health App",            primary:"#8B5CF6", secondary:"#C4B5FD", cta:"#10B981", bg:"#FAF5FF", text:"#4C1D95", border:"#EDE9FE", note:"Calming lavender + green" },
+  { n:25, name:"Pet Tech App",                 primary:"#F97316", secondary:"#FB923C", cta:"#2563EB", bg:"#FFF7ED", text:"#9A3412", border:"#FED7AA", note:"Playful orange + trust blue" },
+  { n:26, name:"Smart Home / IoT",             primary:"#1E293B", secondary:"#334155", cta:"#22C55E", bg:"#0F172A", text:"#F8FAFC", border:"#475569", note:"Dark tech + status green" },
+  { n:27, name:"EV / Charging Ecosystem",      primary:"#0891B2", secondary:"#22D3EE", cta:"#22C55E", bg:"#ECFEFF", text:"#164E63", border:"#A5F3FC", note:"Electric cyan + eco green" },
+  { n:28, name:"Subscription Box",             primary:"#D946EF", secondary:"#E879F9", cta:"#F97316", bg:"#FDF4FF", text:"#86198F", border:"#F5D0FE", note:"Excitement purple + urgency orange" },
+  { n:29, name:"Podcast Platform",             primary:"#1E1B4B", secondary:"#312E81", cta:"#F97316", bg:"#0F0F23", text:"#F8FAFC", border:"#4338CA", note:"Dark audio + warm accent" },
+  { n:30, name:"Dating App",                   primary:"#E11D48", secondary:"#FB7185", cta:"#F97316", bg:"#FFF1F2", text:"#881337", border:"#FECDD3", note:"Romantic rose + warm orange" },
+  { n:31, name:"Micro-Credentials / Badges",   primary:"#0369A1", secondary:"#0EA5E9", cta:"#CA8A04", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Trust blue + achievement gold" },
+  { n:32, name:"Knowledge Base / Docs",        primary:"#475569", secondary:"#64748B", cta:"#2563EB", bg:"#F8FAFC", text:"#1E293B", border:"#E2E8F0", note:"Neutral grey + link blue" },
+  { n:33, name:"Hyperlocal Services",          primary:"#059669", secondary:"#10B981", cta:"#F97316", bg:"#ECFDF5", text:"#064E3B", border:"#A7F3D0", note:"Location green + action orange" },
+  { n:34, name:"Beauty / Spa / Wellness",      primary:"#EC4899", secondary:"#F9A8D4", cta:"#8B5CF6", bg:"#FDF2F8", text:"#831843", border:"#FBCFE8", note:"Soft pink + lavender luxury" },
+  { n:35, name:"Luxury / Premium Brand",       primary:"#1C1917", secondary:"#44403C", cta:"#CA8A04", bg:"#FAFAF9", text:"#0C0A09", border:"#D6D3D1", note:"Premium black + gold" },
+  { n:36, name:"Restaurant / Food",            primary:"#DC2626", secondary:"#F87171", cta:"#CA8A04", bg:"#FEF2F2", text:"#450A0A", border:"#FECACA", note:"Appetizing red + warm gold" },
+  { n:37, name:"Fitness / Gym",                primary:"#F97316", secondary:"#FB923C", cta:"#22C55E", bg:"#1F2937", text:"#F8FAFC", border:"#374151", note:"Energy orange + success green" },
+  { n:38, name:"Real Estate / Property",       primary:"#0F766E", secondary:"#14B8A6", cta:"#0369A1", bg:"#F0FDFA", text:"#134E4A", border:"#99F6E4", note:"Trust teal + professional blue" },
+  { n:39, name:"Travel / Tourism",             primary:"#0EA5E9", secondary:"#38BDF8", cta:"#F97316", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Sky blue + adventure orange" },
+  { n:40, name:"Hotel / Hospitality",          primary:"#1E3A8A", secondary:"#3B82F6", cta:"#CA8A04", bg:"#F8FAFC", text:"#1E40AF", border:"#BFDBFE", note:"Luxury navy + gold service" },
+  { n:41, name:"Wedding / Event Planning",     primary:"#DB2777", secondary:"#F472B6", cta:"#CA8A04", bg:"#FDF2F8", text:"#831843", border:"#FBCFE8", note:"Romantic pink + elegant gold" },
+  { n:42, name:"Legal Services",               primary:"#1E3A8A", secondary:"#1E40AF", cta:"#B45309", bg:"#F8FAFC", text:"#0F172A", border:"#CBD5E1", note:"Authority navy + trust gold" },
+  { n:43, name:"Insurance Platform",           primary:"#0369A1", secondary:"#0EA5E9", cta:"#22C55E", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Security blue + protected green" },
+  { n:44, name:"Banking / Traditional Finance",primary:"#0F172A", secondary:"#1E3A8A", cta:"#CA8A04", bg:"#F8FAFC", text:"#020617", border:"#E2E8F0", note:"Trust navy + premium gold" },
+  { n:45, name:"Online Course / E-learning",   primary:"#0D9488", secondary:"#2DD4BF", cta:"#F97316", bg:"#F0FDFA", text:"#134E4A", border:"#5EEAD4", note:"Progress teal + achievement orange" },
+  { n:46, name:"Non-profit / Charity",         primary:"#0891B2", secondary:"#22D3EE", cta:"#F97316", bg:"#ECFEFF", text:"#164E63", border:"#A5F3FC", note:"Compassion blue + action orange" },
+  { n:47, name:"Music Streaming",              primary:"#1E1B4B", secondary:"#4338CA", cta:"#22C55E", bg:"#0F0F23", text:"#F8FAFC", border:"#312E81", note:"Dark audio + play green" },
+  { n:48, name:"Video Streaming / OTT",        primary:"#0F0F23", secondary:"#1E1B4B", cta:"#E11D48", bg:"#000000", text:"#F8FAFC", border:"#312E81", note:"Cinema dark + play red" },
+  { n:49, name:"Job Board / Recruitment",      primary:"#0369A1", secondary:"#0EA5E9", cta:"#22C55E", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Professional blue + success green" },
+  { n:50, name:"Marketplace (P2P)",            primary:"#7C3AED", secondary:"#A78BFA", cta:"#22C55E", bg:"#FAF5FF", text:"#4C1D95", border:"#DDD6FE", note:"Trust purple + transaction green" },
+  { n:51, name:"Logistics / Delivery",         primary:"#2563EB", secondary:"#3B82F6", cta:"#F97316", bg:"#EFF6FF", text:"#1E40AF", border:"#BFDBFE", note:"Tracking blue + delivery orange" },
+  { n:52, name:"Agriculture / Farm Tech",      primary:"#15803D", secondary:"#22C55E", cta:"#CA8A04", bg:"#F0FDF4", text:"#14532D", border:"#BBF7D0", note:"Earth green + harvest gold" },
+  { n:53, name:"Construction / Architecture",  primary:"#64748B", secondary:"#94A3B8", cta:"#F97316", bg:"#F8FAFC", text:"#334155", border:"#E2E8F0", note:"Industrial grey + safety orange" },
+  { n:54, name:"Automotive / Car Dealership",  primary:"#1E293B", secondary:"#334155", cta:"#DC2626", bg:"#F8FAFC", text:"#0F172A", border:"#E2E8F0", note:"Premium dark + action red" },
+  { n:55, name:"Photography Studio",           primary:"#18181B", secondary:"#27272A", cta:"#F8FAFC", bg:"#000000", text:"#FAFAFA", border:"#3F3F46", note:"Pure black + white contrast" },
+  { n:56, name:"Coworking Space",              primary:"#F59E0B", secondary:"#FBBF24", cta:"#2563EB", bg:"#FFFBEB", text:"#78350F", border:"#FDE68A", note:"Energetic amber + booking blue" },
+  { n:57, name:"Cleaning Service",             primary:"#0891B2", secondary:"#22D3EE", cta:"#22C55E", bg:"#ECFEFF", text:"#164E63", border:"#A5F3FC", note:"Fresh cyan + clean green" },
+  { n:58, name:"Home Services",                primary:"#1E40AF", secondary:"#3B82F6", cta:"#F97316", bg:"#EFF6FF", text:"#1E3A8A", border:"#BFDBFE", note:"Professional blue + urgent orange" },
+  { n:59, name:"Childcare / Daycare",          primary:"#F472B6", secondary:"#FBCFE8", cta:"#22C55E", bg:"#FDF2F8", text:"#9D174D", border:"#FCE7F3", note:"Soft pink + safe green" },
+  { n:60, name:"Senior Care / Elderly",        primary:"#0369A1", secondary:"#38BDF8", cta:"#22C55E", bg:"#F0F9FF", text:"#0C4A6E", border:"#E0F2FE", note:"Calm blue + reassuring green" },
+  { n:61, name:"Medical Clinic",               primary:"#0891B2", secondary:"#22D3EE", cta:"#22C55E", bg:"#F0FDFA", text:"#134E4A", border:"#CCFBF1", note:"Medical teal + health green" },
+  { n:62, name:"Pharmacy / Drug Store",        primary:"#15803D", secondary:"#22C55E", cta:"#0369A1", bg:"#F0FDF4", text:"#14532D", border:"#BBF7D0", note:"Pharmacy green + trust blue" },
+  { n:63, name:"Dental Practice",              primary:"#0EA5E9", secondary:"#38BDF8", cta:"#FBBF24", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Fresh blue + smile yellow" },
+  { n:64, name:"Veterinary Clinic",            primary:"#0D9488", secondary:"#14B8A6", cta:"#F97316", bg:"#F0FDFA", text:"#134E4A", border:"#99F6E4", note:"Caring teal + warm orange" },
+  { n:65, name:"Florist / Plant Shop",         primary:"#15803D", secondary:"#22C55E", cta:"#EC4899", bg:"#F0FDF4", text:"#14532D", border:"#BBF7D0", note:"Natural green + floral pink" },
+  { n:66, name:"Bakery / Cafe",                primary:"#92400E", secondary:"#B45309", cta:"#F8FAFC", bg:"#FEF3C7", text:"#78350F", border:"#FDE68A", note:"Warm brown + cream white" },
+  { n:67, name:"Coffee Shop",                  primary:"#78350F", secondary:"#92400E", cta:"#FBBF24", bg:"#FEF3C7", text:"#451A03", border:"#FDE68A", note:"Coffee brown + warm gold" },
+  { n:68, name:"Brewery / Winery",             primary:"#7C2D12", secondary:"#B91C1C", cta:"#CA8A04", bg:"#FEF2F2", text:"#450A0A", border:"#FECACA", note:"Deep burgundy + craft gold" },
+  { n:69, name:"Airline",                      primary:"#1E3A8A", secondary:"#3B82F6", cta:"#F97316", bg:"#EFF6FF", text:"#1E40AF", border:"#BFDBFE", note:"Sky blue + booking orange" },
+  { n:70, name:"News / Media Platform",        primary:"#DC2626", secondary:"#EF4444", cta:"#1E40AF", bg:"#FEF2F2", text:"#450A0A", border:"#FECACA", note:"Breaking red + link blue" },
+  { n:71, name:"Magazine / Blog",              primary:"#18181B", secondary:"#3F3F46", cta:"#EC4899", bg:"#FAFAFA", text:"#09090B", border:"#E4E4E7", note:"Editorial black + accent pink" },
+  { n:72, name:"Freelancer Platform",          primary:"#6366F1", secondary:"#818CF8", cta:"#22C55E", bg:"#EEF2FF", text:"#312E81", border:"#C7D2FE", note:"Creative indigo + hire green" },
+  { n:73, name:"Consulting Firm",              primary:"#0F172A", secondary:"#334155", cta:"#CA8A04", bg:"#F8FAFC", text:"#020617", border:"#E2E8F0", note:"Authority navy + premium gold" },
+  { n:74, name:"Marketing Agency",             primary:"#EC4899", secondary:"#F472B6", cta:"#06B6D4", bg:"#FDF2F8", text:"#831843", border:"#FBCFE8", note:"Bold pink + creative cyan" },
+  { n:75, name:"Event Management",             primary:"#7C3AED", secondary:"#A78BFA", cta:"#F97316", bg:"#FAF5FF", text:"#4C1D95", border:"#DDD6FE", note:"Excitement purple + action orange" },
+  { n:76, name:"Conference / Webinar",         primary:"#1E40AF", secondary:"#3B82F6", cta:"#22C55E", bg:"#EFF6FF", text:"#1E3A8A", border:"#BFDBFE", note:"Professional blue + join green" },
+  { n:77, name:"Membership / Community",       primary:"#7C3AED", secondary:"#A78BFA", cta:"#22C55E", bg:"#FAF5FF", text:"#4C1D95", border:"#DDD6FE", note:"Community purple + join green" },
+  { n:78, name:"Newsletter Platform",          primary:"#0369A1", secondary:"#0EA5E9", cta:"#F97316", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"Trust blue + subscribe orange" },
+  { n:79, name:"Digital Products",             primary:"#6366F1", secondary:"#818CF8", cta:"#22C55E", bg:"#EEF2FF", text:"#312E81", border:"#C7D2FE", note:"Digital indigo + buy green" },
+  { n:80, name:"Church / Religious",           primary:"#7C3AED", secondary:"#A78BFA", cta:"#CA8A04", bg:"#FAF5FF", text:"#4C1D95", border:"#DDD6FE", note:"Spiritual purple + warm gold" },
+  { n:81, name:"Sports Team / Club",           primary:"#DC2626", secondary:"#EF4444", cta:"#FBBF24", bg:"#FEF2F2", text:"#7F1D1D", border:"#FECACA", note:"Team red + championship gold" },
+  { n:82, name:"Museum / Gallery",             primary:"#18181B", secondary:"#27272A", cta:"#F8FAFC", bg:"#FAFAFA", text:"#09090B", border:"#E4E4E7", note:"Gallery black + white space" },
+  { n:83, name:"Theater / Cinema",             primary:"#1E1B4B", secondary:"#312E81", cta:"#CA8A04", bg:"#0F0F23", text:"#F8FAFC", border:"#4338CA", note:"Dramatic dark + spotlight gold" },
+  { n:84, name:"Language Learning",            primary:"#4F46E5", secondary:"#818CF8", cta:"#22C55E", bg:"#EEF2FF", text:"#312E81", border:"#C7D2FE", note:"Learning indigo + progress green" },
+  { n:85, name:"Coding Bootcamp",              primary:"#0F172A", secondary:"#1E293B", cta:"#22C55E", bg:"#020617", text:"#F8FAFC", border:"#334155", note:"Terminal dark + success green" },
+  { n:86, name:"Cybersecurity Platform",       primary:"#00FF41", secondary:"#0D0D0D", cta:"#FF3333", bg:"#000000", text:"#E0E0E0", border:"#1F1F1F", note:"Matrix green + alert red" },
+  { n:87, name:"Developer Tool / IDE",         primary:"#1E293B", secondary:"#334155", cta:"#22C55E", bg:"#0F172A", text:"#F8FAFC", border:"#475569", note:"Code dark + run green" },
+  { n:88, name:"Biotech / Life Sciences",      primary:"#0EA5E9", secondary:"#0284C7", cta:"#10B981", bg:"#F0F9FF", text:"#0C4A6E", border:"#BAE6FD", note:"DNA blue + life green" },
+  { n:89, name:"Space Tech / Aerospace",       primary:"#F8FAFC", secondary:"#94A3B8", cta:"#3B82F6", bg:"#0B0B10", text:"#F8FAFC", border:"#1E293B", note:"Star white + launch blue" },
+  { n:90, name:"Architecture / Interior",      primary:"#171717", secondary:"#404040", cta:"#D4AF37", bg:"#FFFFFF", text:"#171717", border:"#E5E5E5", note:"Minimal black + accent gold" },
+  { n:91, name:"Quantum Computing",            primary:"#00FFFF", secondary:"#7B61FF", cta:"#FF00FF", bg:"#050510", text:"#E0E0FF", border:"#333344", note:"Quantum cyan + interference purple" },
+  { n:92, name:"Biohacking / Longevity",       primary:"#FF4D4D", secondary:"#4D94FF", cta:"#00E676", bg:"#F5F5F7", text:"#1C1C1E", border:"#E5E5EA", note:"Bio red/blue + vitality green" },
+  { n:93, name:"Autonomous Systems",           primary:"#00FF41", secondary:"#008F11", cta:"#FF3333", bg:"#0D1117", text:"#E6EDF3", border:"#30363D", note:"Terminal green + alert red" },
+  { n:94, name:"Generative AI Art",            primary:"#18181B", secondary:"#3F3F46", cta:"#EC4899", bg:"#FAFAFA", text:"#09090B", border:"#E4E4E7", note:"Canvas neutral + creative pink" },
+  { n:95, name:"Spatial / Vision OS",          primary:"#FFFFFF", secondary:"#E5E5E5", cta:"#007AFF", bg:"#888888", text:"#000000", border:"#CCCCCC", note:"Glass white + system blue" },
+  { n:96, name:"Climate Tech",                 primary:"#059669", secondary:"#10B981", cta:"#FBBF24", bg:"#ECFDF5", text:"#064E3B", border:"#A7F3D0", note:"Nature green + solar gold" },
+];
+
+function luminance(hex) {
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const toLinear = c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4);
+  return 0.2126*toLinear(r) + 0.7152*toLinear(g) + 0.0722*toLinear(b);
+}
+function readable(hex) {
+  return luminance(hex) > 0.35 ? '#111' : '#fff';
+}
+
+const grid = document.getElementById('grid');
+
+palettes.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-num">#${p.n}</div>
+        <div class="card-name">${p.name}</div>
+      </div>
+      <div class="card-note">${p.note}</div>
+    </div>
+
+    <div class="swatches">
+      ${[
+        {label:'Primary',   hex:p.primary},
+        {label:'Secondary', hex:p.secondary},
+        {label:'CTA',       hex:p.cta},
+        {label:'BG',        hex:p.bg},
+        {label:'Text',      hex:p.text},
+        {label:'Border',    hex:p.border},
+      ].map(s => `
+        <div class="sw">
+          <div class="sw-box" style="background:${s.hex};border:1px solid rgba(255,255,255,0.08)"></div>
+          <div class="sw-label">${s.label}</div>
+          <div class="sw-hex">${s.hex}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="mock">
+      <!-- Nav -->
+      <div class="mock-nav" style="background:${p.primary}">
+        <span class="mock-nav-logo" style="color:${readable(p.primary)}">Cadence</span>
+        <div class="mock-nav-links">
+          <span class="active" style="color:${readable(p.primary)}">Dashboard</span>
+          <span style="color:${readable(p.primary)}">Students</span>
+          <span style="color:${readable(p.primary)}">Invoices</span>
+        </div>
+      </div>
+      <!-- Widgets -->
+      <div class="mock-body" style="background:${p.bg}">
+        <div class="mock-widget" style="background:${p.secondary};border:1px solid ${p.border}">
+          <div class="mock-widget-val" style="color:${readable(p.secondary)}">12</div>
+          <div class="mock-widget-label" style="color:${readable(p.secondary)}">Sessions</div>
+          <div class="mock-widget-tag" style="background:${p.cta};color:${readable(p.cta)}">This month</div>
+        </div>
+        <div class="mock-widget" style="background:${p.secondary};border:1px solid ${p.border}">
+          <div class="mock-widget-val" style="color:${readable(p.secondary)}">$2,840</div>
+          <div class="mock-widget-label" style="color:${readable(p.secondary)}">Revenue</div>
+          <div class="mock-widget-tag" style="background:${p.cta};color:${readable(p.cta)}">↑ 18%</div>
+        </div>
+        <div class="mock-widget" style="background:${p.secondary};border:1px solid ${p.border}">
+          <div class="mock-widget-val" style="color:${readable(p.secondary)}">8</div>
+          <div class="mock-widget-label" style="color:${readable(p.secondary)}">Students</div>
+          <div class="mock-widget-tag" style="background:${p.cta};color:${readable(p.cta)}">Active</div>
+        </div>
+      </div>
+      <!-- Footer -->
+      <div class="mock-footer" style="background:${p.bg};border-top:1px solid ${p.border}">
+        <span class="mock-footer-text" style="color:${p.text}">3 invoices ready</span>
+        <button class="mock-btn" style="background:${p.cta};color:${readable(p.cta)}">Generate</button>
+      </div>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

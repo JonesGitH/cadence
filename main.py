@@ -91,7 +91,13 @@ def _run_server(port: int) -> None:
 
 
 def _open_browser(port: int) -> None:
-    time.sleep(1.5)
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        try:
+            socket.create_connection(('127.0.0.1', port), timeout=0.1).close()
+            break
+        except OSError:
+            time.sleep(0.1)
     webbrowser.open(f'http://127.0.0.1:{port}')
 
 

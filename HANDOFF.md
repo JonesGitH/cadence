@@ -46,6 +46,7 @@ Cadence is a desktop tutoring-practice management app for a solo practitioner. T
 - **Flask template caching**: When editing templates while the preview server was running, changes didn't appear. Required a full server restart — not just a page reload — to pick up template changes.
 - **Running `build.bat` via Bash tool**: `build.bat` ends with `pause` which hangs in a non-interactive shell. Ran the 5 build steps individually instead.
 - **ISCC.exe path in HANDOFF.md was stale**: The old HANDOFF said Inno Setup was at `D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\ISCC.exe`. That directory exists but is empty — Inno Setup is not installed.
+- **Claude Code's shell cannot access `D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\`**: The shell runs under a different security context than the Alex user account. `Get-ChildItem`, `Test-Path`, `where /r`, and `cmd /c dir` all fail silently or return "not found" for that path, even though the files exist and are accessible from a normal Command Prompt. `Get-PSDrive` confirms D: is mounted, but per-user AppData subdirectories on D: are ACL-restricted to the Alex account. **Workaround**: write a `.bat` file to `E:\Code\cadence\` and have the user run it from their own Command Prompt. The bat file ran successfully: `"D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.0 cadence.iss`
 
 ---
 
@@ -183,7 +184,7 @@ All-day → yellow; student session → blue; other → gray.
 
 ## Build Pipeline
 
-**Prerequisites:** Python 3.12, PyInstaller (installed), Inno Setup 6 (NOT installed — see above)
+**Prerequisites:** Python 3.12, PyInstaller (installed), Inno Setup 6 (installed at `D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\`)
 
 Run steps individually (don't use `build.bat` in non-interactive shells — it ends with `pause`):
 
@@ -193,9 +194,15 @@ pip install --quiet --upgrade pyinstaller pystray Pillow openpyxl flask reportla
 python create_icon.py
 python generate_version_info.py
 pyinstaller cadence.spec --clean --noconfirm
-# Then installer (requires Inno Setup installed):
-"D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.0 cadence.iss
 ```
+
+**Installer step — Claude Code's shell cannot run ISCC.exe directly** (see Failed Approaches). Write this bat file and have the user run it from their own Command Prompt:
+
+```bat
+"D:\Users\Alex\AppData\Local\Programs\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.0 "E:\Code\cadence\cadence.iss"
+```
+
+Or write `build_installer.bat` to `E:\Code\cadence\` and tell the user to run it. Output: `dist\Cadence_Setup_1.0.0.exe`
 
 To bump the version: edit `version.py` only — everything else reads from it.
 

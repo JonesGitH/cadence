@@ -10,7 +10,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, R
 from app import app
 import config as _config
 from database import (
-    get_db, get_client, get_all_invoices, get_invoice, get_setting, get_settings_batch,
+    get_db, get_client, get_all_clients, get_all_invoices, get_invoice, get_setting, get_settings_batch,
     get_enabled_calendars, next_invoice_number, month_name,
     toggle_invoice_paid, get_invoice_years, get_annual_summary,
 )
@@ -35,7 +35,7 @@ def create_invoice():
     year, month = next_year_month()
     cur_year = current_year_month()[0]
     return render_template('create_invoice.html',
-        clients=__import__('database').get_all_clients(active_only=True),
+        clients=get_all_clients(active_only=True),
         months=[(i, cal_module.month_name[i]) for i in range(1, 13)],
         years=list(range(cur_year - 2, cur_year + 2)),
         current_month=month,
@@ -70,7 +70,7 @@ def fetch_sessions():
     rate = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
     for s in sessions:
         s['rate']       = rate
-        s['line_total'] = rate
+        s['line_total'] = round(s['duration_hours'] * rate, 2)
     return jsonify({'sessions': sessions, 'rate': rate})
 
 
@@ -114,11 +114,12 @@ def generate_invoice():
                                'business_email', 'business_phone', 'business_address',
                                'business_city', 'business_state', 'business_zip', 'venmo_handle'))
 
-    rate            = float(cfg.get('hourly_rate', '0'))
+    global_rate     = float(cfg.get('hourly_rate', '0'))
+    rate            = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
     total_hours     = round(sum(s['duration_hours'] for s in sessions), 2)
     late_fee_amount = round(float(late_fee['amount']), 2) if late_fee else 0
     credit_amount   = round(float(credit['amount']),   2) if credit   else 0
-    total_amount    = round(len(sessions) * rate + late_fee_amount - credit_amount, 2)
+    total_amount    = round(total_hours * rate + late_fee_amount - credit_amount, 2)
     inv_number      = next_invoice_number(conn)
     now             = datetime.now()
 
@@ -131,12 +132,13 @@ def generate_invoice():
 
     lines_for_pdf = []
     for s in sessions:
+        line_total = round(s['duration_hours'] * rate, 2)
         conn.execute('''
             INSERT INTO invoice_lines
                 (invoice_id, session_date, start_time, end_time, duration_hours, rate, line_total, line_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'session')
         ''', (invoice_id, s['date_display'], s['start_time'], s['end_time'],
-              s['duration_hours'], rate, rate))
+              s['duration_hours'], rate, line_total))
         lines_for_pdf.append({
             'line_type':      'session',
             'session_date':   s['date_display'],
@@ -144,7 +146,7 @@ def generate_invoice():
             'end_time':       s['end_time'],
             'duration_hours': s['duration_hours'],
             'rate':           rate,
-            'line_total':     rate,
+            'line_total':     line_total,
         })
 
     if late_fee:
@@ -276,12 +278,16 @@ def export_summary_csv(year):
     ''', (year,)).fetchall()
     conn.close()
 
+    def _csv_safe(v):
+        s = str(v)
+        return "'" + s if s and s[0] in ('=', '+', '-', '@', '\t', '\r') else s
+
     buf = io.StringIO()
     w   = csv.writer(buf)
     w.writerow(['Invoice #', 'Student', 'Month', 'Year', 'Hours', 'Amount',
                 'Rate', 'Status', 'Paid Date', 'Created'])
     for r in rows:
-        w.writerow([r['invoice_number'], r['student'],
+        w.writerow([_csv_safe(r['invoice_number']), _csv_safe(r['student']),
                     cal_module.month_name[r['month']], r['year'],
                     r['total_hours'], r['total_amount'], r['hourly_rate'],
                     r['status'], r['paid_at'] or '', r['created_at'][:10]])

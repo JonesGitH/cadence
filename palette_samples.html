@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadence — Palette Samples</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; padding: 40px 24px; }
+    h1 { font-size: 1.1rem; color: #64748b; font-weight: 500; margin-bottom: 32px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .palette { background: #fff; border-radius: 16px; overflow: hidden; margin-bottom: 48px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06); }
+    .palette-label { padding: 20px 28px 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+    .palette-title { padding: 4px 28px 20px; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+
+    /* Swatches row */
+    .swatches { display: flex; padding: 0 28px 24px; gap: 12px; flex-wrap: wrap; }
+    .swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .swatch-box { width: 64px; height: 64px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.07); }
+    .swatch-name { font-size: 0.65rem; color: #94a3b8; font-weight: 500; }
+    .swatch-hex { font-size: 0.7rem; color: #475569; font-family: monospace; }
+
+    /* Mock UI card */
+    .mock { margin: 0 28px 28px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+
+    /* ── Palette 8: Analytics Dashboard ── */
+    .p8-nav { background: #1E40AF; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .p8-nav .logo { color: #fff; font-weight: 700; font-size: 0.95rem; }
+    .p8-nav .nav-links { display: flex; gap: 20px; }
+    .p8-nav .nav-links a { color: #BFDBFE; font-size: 0.8rem; text-decoration: none; }
+    .p8-nav .nav-links a.active { color: #fff; font-weight: 600; }
+    .p8-body { background: #F8FAFC; padding: 24px; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .p8-card { background: #fff; border-radius: 10px; padding: 18px; border: 1px solid #DBEAFE; }
+    .p8-card .metric { font-size: 1.6rem; font-weight: 800; color: #1E3A8A; }
+    .p8-card .label { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+    .p8-card .badge { display: inline-block; margin-top: 8px; background: #FEF3C7; color: #92400E; font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+    .p8-bar { background: #fff; border-top: 1px solid #DBEAFE; padding: 20px 24px; }
+    .p8-bar .bar-label { font-size: 0.75rem; color: #64748b; margin-bottom: 10px; font-weight: 600; }
+    .p8-bar-track { background: #DBEAFE; border-radius: 99px; height: 8px; margin-bottom: 8px; }
+    .p8-bar-fill { height: 8px; border-radius: 99px; background: #1E40AF; }
+    .p8-bar-fill.amber { background: #F59E0B; }
+    .p8-btn { display: inline-block; margin-top: 12px; background: #F59E0B; color: #fff; font-size: 0.8rem; font-weight: 600; padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; }
+
+    /* ── Palette 17: Productivity Tool ── */
+    .p17-nav { background: #0D9488; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .p17-nav .logo { color: #fff; font-weight: 700; font-size: 0.95rem; }
+    .p17-nav .nav-links { display: flex; gap: 20px; }
+    .p17-nav .nav-links a { color: #CCFBF1; font-size: 0.8rem; text-decoration: none; }
+    .p17-nav .nav-links a.active { color: #fff; font-weight: 600; }
+    .p17-body { background: #F0FDFA; padding: 24px; display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
+    .p17-sidebar { display: flex; flex-direction: column; gap: 6px; }
+    .p17-sidebar-item { padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; color: #134E4A; cursor: pointer; }
+    .p17-sidebar-item.active { background: #0D9488; color: #fff; font-weight: 600; }
+    .p17-sidebar-item:not(.active):hover { background: #CCFBF1; }
+    .p17-main { display: flex; flex-direction: column; gap: 10px; }
+    .p17-task { background: #fff; border-radius: 8px; padding: 14px 16px; border: 1px solid #99F6E4; display: flex; align-items: center; gap: 12px; }
+    .p17-task .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .p17-task .dot.done { background: #0D9488; }
+    .p17-task .dot.todo { background: #e2e8f0; border: 2px solid #99F6E4; }
+    .p17-task .text { font-size: 0.82rem; color: #134E4A; flex: 1; }
+    .p17-task .text.done { text-decoration: line-through; color: #94a3b8; }
+    .p17-task .tag { font-size: 0.68rem; background: #FFF7ED; color: #EA580C; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+    .p17-btn { display: inline-block; margin-top: 4px; background: #F97316; color: #fff; font-size: 0.8rem; font-weight: 600; padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer; align-self: flex-start; }
+
+    /* ── Palette 45: Online Course / E-learning ── */
+    .p45-nav { background: #0D9488; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .p45-nav .logo { color: #fff; font-weight: 700; font-size: 0.95rem; }
+    .p45-nav .nav-links { display: flex; gap: 20px; }
+    .p45-nav .nav-links a { color: #5EEAD4; font-size: 0.8rem; text-decoration: none; }
+    .p45-nav .nav-links a.active { color: #fff; font-weight: 600; }
+    .p45-body { background: #F0FDFA; padding: 24px; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .p45-card { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #99F6E4; }
+    .p45-card-img { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+    .p45-card-body { padding: 14px; }
+    .p45-card-body .title { font-size: 0.85rem; font-weight: 700; color: #134E4A; margin-bottom: 4px; }
+    .p45-card-body .sub { font-size: 0.72rem; color: #64748b; margin-bottom: 10px; }
+    .p45-progress-track { background: #CCFBF1; border-radius: 99px; height: 6px; }
+    .p45-progress-fill { height: 6px; border-radius: 99px; }
+    .p45-card-footer { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0fdfa; }
+    .p45-card-footer .pct { font-size: 0.72rem; color: #0D9488; font-weight: 600; }
+    .p45-btn { background: #F97316; color: #fff; font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; }
+    .p45-cta { background: #fff; border-top: 1px solid #99F6E4; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .p45-cta .msg { font-size: 0.85rem; color: #134E4A; font-weight: 600; }
+    .p45-cta .btn-big { background: #F97316; color: #fff; font-size: 0.85rem; font-weight: 700; padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<h1>Cadence — Color Palette Samples</h1>
+
+<!-- ══════════════════════════════════════════
+     PALETTE 8 — Analytics Dashboard
+════════════════════════════════════════════ -->
+<div class="palette">
+  <div class="palette-label">Palette #8</div>
+  <div class="palette-title">Analytics Dashboard</div>
+
+  <div class="swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#1E40AF"></div><div class="swatch-name">Primary</div><div class="swatch-hex">#1E40AF</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#3B82F6"></div><div class="swatch-name">Secondary</div><div class="swatch-hex">#3B82F6</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F59E0B"></div><div class="swatch-name">CTA</div><div class="swatch-hex">#F59E0B</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F8FAFC; border:1px solid #e2e8f0"></div><div class="swatch-name">Background</div><div class="swatch-hex">#F8FAFC</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#1E3A8A"></div><div class="swatch-name">Text</div><div class="swatch-hex">#1E3A8A</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#DBEAFE"></div><div class="swatch-name">Border</div><div class="swatch-hex">#DBEAFE</div></div>
+  </div>
+
+  <div class="mock">
+    <div class="p8-nav">
+      <span class="logo">Cadence</span>
+      <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Students</a>
+        <a href="#">Invoices</a>
+        <a href="#">Settings</a>
+      </div>
+    </div>
+    <div class="p8-body">
+      <div class="p8-card">
+        <div class="metric">12</div>
+        <div class="label">Sessions This Month</div>
+        <div class="badge">+3 vs last month</div>
+      </div>
+      <div class="p8-card">
+        <div class="metric">$2,840</div>
+        <div class="label">Revenue (Oct)</div>
+        <div class="badge">↑ 18%</div>
+      </div>
+      <div class="p8-card">
+        <div class="metric">8</div>
+        <div class="label">Active Students</div>
+        <div class="badge">2 unpaid invoices</div>
+      </div>
+    </div>
+    <div class="p8-bar">
+      <div class="bar-label">Invoice Collection Rate</div>
+      <div class="p8-bar-track"><div class="p8-bar-fill" style="width:78%"></div></div>
+      <div class="bar-label" style="margin-top:10px">Sessions Logged</div>
+      <div class="p8-bar-track"><div class="p8-bar-fill amber" style="width:55%"></div></div>
+      <button class="p8-btn">View Full Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PALETTE 17 — Productivity Tool
+════════════════════════════════════════════ -->
+<div class="palette">
+  <div class="palette-label">Palette #17</div>
+  <div class="palette-title">Productivity Tool</div>
+
+  <div class="swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#0D9488"></div><div class="swatch-name">Primary</div><div class="swatch-hex">#0D9488</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#14B8A6"></div><div class="swatch-name">Secondary</div><div class="swatch-hex">#14B8A6</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F97316"></div><div class="swatch-name">CTA</div><div class="swatch-hex">#F97316</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F0FDFA; border:1px solid #e2e8f0"></div><div class="swatch-name">Background</div><div class="swatch-hex">#F0FDFA</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#134E4A"></div><div class="swatch-name">Text</div><div class="swatch-hex">#134E4A</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#99F6E4"></div><div class="swatch-name">Border</div><div class="swatch-hex">#99F6E4</div></div>
+  </div>
+
+  <div class="mock">
+    <div class="p17-nav">
+      <span class="logo">Cadence</span>
+      <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Students</a>
+        <a href="#">Invoices</a>
+        <a href="#">Settings</a>
+      </div>
+    </div>
+    <div class="p17-body">
+      <div class="p17-sidebar">
+        <div class="p17-sidebar-item active">Today's Sessions</div>
+        <div class="p17-sidebar-item">All Students</div>
+        <div class="p17-sidebar-item">Invoices</div>
+        <div class="p17-sidebar-item">Calendar</div>
+        <div class="p17-sidebar-item">Settings</div>
+      </div>
+      <div class="p17-main">
+        <div class="p17-task">
+          <div class="dot done"></div>
+          <div class="text done">Emma R. — 9:00 AM Math (60 min)</div>
+          <span class="tag">Invoiced</span>
+        </div>
+        <div class="p17-task">
+          <div class="dot done"></div>
+          <div class="text done">Jake T. — 11:00 AM Reading (45 min)</div>
+          <span class="tag">Done</span>
+        </div>
+        <div class="p17-task">
+          <div class="dot todo"></div>
+          <div class="text">Lily C. — 2:00 PM Science (60 min)</div>
+          <span class="tag">Upcoming</span>
+        </div>
+        <button class="p17-btn">+ Add Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PALETTE 45 — Online Course / E-learning
+════════════════════════════════════════════ -->
+<div class="palette">
+  <div class="palette-label">Palette #45</div>
+  <div class="palette-title">Online Course / E-learning</div>
+
+  <div class="swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#0D9488"></div><div class="swatch-name">Primary</div><div class="swatch-hex">#0D9488</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#2DD4BF"></div><div class="swatch-name">Secondary</div><div class="swatch-hex">#2DD4BF</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F97316"></div><div class="swatch-name">CTA</div><div class="swatch-hex">#F97316</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F0FDFA; border:1px solid #e2e8f0"></div><div class="swatch-name">Background</div><div class="swatch-hex">#F0FDFA</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#134E4A"></div><div class="swatch-name">Text</div><div class="swatch-hex">#134E4A</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#5EEAD4"></div><div class="swatch-name">Border</div><div class="swatch-hex">#5EEAD4</div></div>
+  </div>
+
+  <div class="mock">
+    <div class="p45-nav">
+      <span class="logo">Cadence</span>
+      <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Students</a>
+        <a href="#">Invoices</a>
+        <a href="#">Settings</a>
+      </div>
+    </div>
+    <div class="p45-body">
+      <div class="p45-card">
+        <div class="p45-card-img" style="background:#CCFBF1">📐</div>
+        <div class="p45-card-body">
+          <div class="title">Emma R.</div>
+          <div class="sub">Math · Grade 8</div>
+          <div class="p45-progress-track"><div class="p45-progress-fill" style="width:72%;background:#0D9488"></div></div>
+        </div>
+        <div class="p45-card-footer">
+          <span class="pct">72% attendance</span>
+          <button class="p45-btn">View</button>
+        </div>
+      </div>
+      <div class="p45-card">
+        <div class="p45-card-img" style="background:#FFF7ED">📖</div>
+        <div class="p45-card-body">
+          <div class="title">Jake T.</div>
+          <div class="sub">Reading · Grade 5</div>
+          <div class="p45-progress-track"><div class="p45-progress-fill" style="width:90%;background:#2DD4BF"></div></div>
+        </div>
+        <div class="p45-card-footer">
+          <span class="pct">90% attendance</span>
+          <button class="p45-btn">View</button>
+        </div>
+      </div>
+      <div class="p45-card">
+        <div class="p45-card-img" style="background:#F0FDF4">🔬</div>
+        <div class="p45-card-body">
+          <div class="title">Lily C.</div>
+          <div class="sub">Science · Grade 6</div>
+          <div class="p45-progress-track"><div class="p45-progress-fill" style="width:45%;background:#F97316"></div></div>
+        </div>
+        <div class="p45-card-footer">
+          <span class="pct">45% attendance</span>
+          <button class="p45-btn">View</button>
+        </div>
+      </div>
+    </div>
+    <div class="p45-cta">
+      <span class="msg">3 invoices ready to send this month</span>
+      <button class="btn-big">Generate Invoices</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

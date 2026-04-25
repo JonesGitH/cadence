@@ -42,8 +42,9 @@ def _addr_lines(street, city, state, zip_):
 
 def _ordinal(n):
     v = n % 100
-    suffix = ['th', 'st', 'nd', 'rd']
-    return str(n) + (suffix[v - 11] if 11 <= v <= 13 else suffix[min(v % 10, 3)])
+    if 11 <= v <= 13:
+        return str(n) + 'th'
+    return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
 
 
 def _fmt_session_label(date_str, start_time, end_time):

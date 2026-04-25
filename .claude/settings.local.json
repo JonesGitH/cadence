@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Read(//c/Users/Alex/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python scripts/search.py \"tutoring consulting SaaS dashboard professional\" --design-system -p \"Cadence\")",
+      "Bash(python -c ' *)",
+      "Bash(pyinstaller *)",
+      "Bash(D:\\\\Users\\\\Alex\\\\AppData\\\\Local\\\\Programs\\\\Inno Setup 6\\\\ISCC.exe *)"
+    ]
+  }
+}

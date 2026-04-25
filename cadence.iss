@@ -94,13 +94,16 @@ begin
     'Click YES to keep your student records, invoices, and settings.' + #13#10 +
     'Click NO to delete all Cadence data when uninstalling.',
     mbConfirmation, MB_YESNO, IDYES);
+  // Always remove transient SQLite recovery files — they are not user data
+  // and can prevent the database from opening after reinstall.
+  DeleteFile(ExpandConstant('{app}\cadence.db-journal'));
+  DeleteFile(ExpandConstant('{app}\cadence.db-wal'));
+  DeleteFile(ExpandConstant('{app}\cadence.db-shm'));
+
   if Res = IDNO then
   begin
     // User chose to delete data — remove data files after uninstall
     DeleteFile(ExpandConstant('{app}\cadence.db'));
-    DeleteFile(ExpandConstant('{app}\cadence.db-journal'));
-    DeleteFile(ExpandConstant('{app}\cadence.db-wal'));
-    DeleteFile(ExpandConstant('{app}\cadence.db-shm'));
     DeleteFile(ExpandConstant('{app}\config.txt'));
   end;
 end;

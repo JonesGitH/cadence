@@ -46,7 +46,10 @@ def _req(method: str, url: str, **kwargs) -> requests.Response:
             r = requests.request(method, url, **kwargs)
 
             if r.status_code == 429:
-                wait = int(r.headers.get('Retry-After', _RETRY_WAIT * (attempt + 1)))
+                try:
+                    wait = int(r.headers.get('Retry-After', _RETRY_WAIT * (attempt + 1)))
+                except (ValueError, TypeError):
+                    wait = _RETRY_WAIT * (attempt + 1)
                 log.warning('Graph 429 rate-limit; retrying in %ss (attempt %d)', wait, attempt + 1)
                 time.sleep(min(wait, 60))
                 last_exc = requests.HTTPError(response=r)

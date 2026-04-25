@@ -16,9 +16,24 @@ def get_db():
     return conn
 
 
+def _clear_wal(db_path):
+    for ext in ('-wal', '-shm', '-journal'):
+        try:
+            os.remove(db_path + ext)
+        except OSError:
+            pass
+
+
 def init_db():
     os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
-    conn = get_db()
+    try:
+        conn = get_db()
+    except sqlite3.OperationalError:
+        # Stale WAL/journal files from a previous session can block SQLite
+        # from opening the database (common after uninstall-keep-files +
+        # reinstall). Clear them and retry once.
+        _clear_wal(DB_PATH)
+        conn = get_db()
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS settings (
             key   TEXT PRIMARY KEY,
@@ -141,13 +156,16 @@ def init_db():
         ('active',          'INTEGER DEFAULT 1'),
         ('hourly_rate',     'REAL'),
     ]
+    import logging as _logging
+    _mig_log = _logging.getLogger(__name__)
+
     def _add_columns(table, columns):
         for col, defn in columns:
             try:
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {col} {defn}')
-            except sqlite3.OperationalError:
-                # Column already exists
-                pass
+            except sqlite3.OperationalError as e:
+                if 'already exists' not in str(e):
+                    _mig_log.warning('Migration failed adding %s.%s: %s', table, col, e)
 
     _add_columns('clients', client_migrations)
     _add_columns('calendars', [('graph_id', 'TEXT')])
@@ -183,6 +201,8 @@ def get_setting(key, default=None):
 
 
 def get_settings_batch(keys):
+    if not keys:
+        return {}
     conn = get_db()
     rows = conn.execute(
         f"SELECT key, value FROM settings WHERE key IN ({','.join('?'*len(keys))})",
