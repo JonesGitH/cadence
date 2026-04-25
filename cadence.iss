@@ -3,7 +3,9 @@
 ; Build order:  build.bat  (runs PyInstaller first, then calls ISCC on this file)
 
 #define AppName      "Cadence"
-#define AppVersion   "1.0.0"
+#ifndef AppVersion
+  #define AppVersion "1.0.0"
+#endif
 #define AppPublisher "Cadence"
 #define AppExeName   "Cadence.exe"
 #define AppURL       "https://github.com/"
@@ -42,7 +44,7 @@ MinVersion=10.0
 
 ; Wizard appearance
 WizardStyle=modern
-WizardSmallImageFile=static\icon.ico
+WizardSmallImageFile=static\wizard_small.png
 
 ; Architecture
 ArchitecturesAllowed=x64compatible
@@ -64,8 +66,8 @@ Source: "dist\Cadence\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Name: "{group}\{#AppName}";           Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
-; Desktop (optional task)
-Name: "{commondesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+; Desktop (optional task) — use {userdesktop} since installer runs without admin rights
+Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 ; Startup (optional task)
 Name: "{userstartup}\{#AppName}";   Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: startuprun

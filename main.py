@@ -8,6 +8,7 @@ import threading
 import webbrowser
 import time
 import socket
+import traceback
 
 # ── Resolve dirs before importing any cadence module ─────────────────────────
 # BUNDLE_DIR  →  read-only resources (templates, static); sys._MEIPASS when frozen
@@ -20,13 +21,43 @@ else:
     _BUNDLE_DIR = os.path.dirname(os.path.abspath(__file__))
     _DATA_DIR   = _BUNDLE_DIR
 
+# ── Logging — configured before any cadence module is imported ────────────────
+import logging
+import logging.handlers
+
+_LOG_PATH = os.path.join(_DATA_DIR, 'cadence.log')
+
+_log_handler = logging.handlers.RotatingFileHandler(
+    _LOG_PATH, maxBytes=2 * 1024 * 1024, backupCount=3, encoding='utf-8'
+)
+_log_handler.setFormatter(
+    logging.Formatter('%(asctime)s %(levelname)-8s %(name)s  %(message)s',
+                      datefmt='%Y-%m-%d %H:%M:%S')
+)
+logging.basicConfig(level=logging.INFO, handlers=[_log_handler])
+# Keep noisy libraries quiet
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('waitress').setLevel(logging.WARNING)
+
+_applog = logging.getLogger('cadence.main')
+
+def _log(msg: str) -> None:
+    """Fallback plain-text logger for pre-import crash capture."""
+    _applog.critical(msg)
+
+sys.excepthook = lambda etype, val, tb: _log(
+    ''.join(traceback.format_exception(etype, val, tb))
+)
+
 os.environ.setdefault('CADENCE_BUNDLE_DIR', _BUNDLE_DIR)
 os.environ.setdefault('CADENCE_DATA_DIR',   _DATA_DIR)
 
 sys.path.insert(0, _BUNDLE_DIR)
 
 # ── Bootstrap DB then import Flask app ───────────────────────────────────────
+from version import __version__
 from database import init_db, get_setting
+_applog.info('Cadence %s starting — data dir: %s', __version__, _DATA_DIR)
 init_db()
 
 from app import app as _flask_app, get_last_activity
@@ -45,8 +76,18 @@ def _free_port(start: int = PORT) -> int:
     return start
 
 
-def _run_flask(port: int) -> None:
-    _flask_app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
+_server = None  # waitress.TcpServer — set by main(), used by _shutdown()
+
+
+def _run_server(port: int) -> None:
+    """Start the Waitress WSGI server (blocks until _server.close() is called)."""
+    import waitress
+    global _server
+    _server = waitress.create_server(_flask_app, host='127.0.0.1', port=port,
+                                     threads=4, channel_timeout=120)
+    _applog.info('Waitress listening on http://127.0.0.1:%d', port)
+    _server.run()
+    _applog.info('Waitress server stopped')
 
 
 def _open_browser(port: int) -> None:
@@ -55,16 +96,40 @@ def _open_browser(port: int) -> None:
 
 
 def _make_tray_image():
-    from create_icon import draw_icon
-    return draw_icon(64)
+    """Build the tray icon image inline — no file I/O, no cross-module imports."""
+    from PIL import Image, ImageDraw
+    size = 64
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d   = ImageDraw.Draw(img)
+    pad = max(1, size // 16)
+    d.rounded_rectangle(
+        [pad, pad, size - pad, size - pad],
+        radius=max(2, size // 6),
+        fill='#2563eb',
+    )
+    cx, cy, r = size // 2, size // 2, size // 4
+    d.polygon(
+        [(cx, cy - r), (cx + r, cy), (cx, cy + r), (cx - r, cy)],
+        fill='white',
+    )
+    return img
 
 
 def _shutdown(icon) -> None:
+    """Stop the tray icon, close the WSGI server, then exit cleanly."""
+    _applog.info('Shutdown requested')
     try:
         icon.stop()
-    finally:
-        time.sleep(0.2)
-        os._exit(0)
+    except Exception:
+        pass
+    if _server is not None:
+        try:
+            _server.close()
+        except Exception:
+            pass
+    # Give waitress a moment to drain, then exit
+    time.sleep(0.4)
+    sys.exit(0)
 
 
 def _idle_watcher(icon, timeout_minutes: int) -> None:
@@ -82,7 +147,7 @@ def main() -> None:
 
     port = _free_port()
 
-    threading.Thread(target=_run_flask,    args=(port,), daemon=True).start()
+    threading.Thread(target=_run_server,   args=(port,), daemon=True).start()
     threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
 
     def on_open(icon, item):
@@ -109,4 +174,7 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        _log(traceback.format_exc())

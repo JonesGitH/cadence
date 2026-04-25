@@ -3,16 +3,19 @@ setlocal EnableDelayedExpansion
 title Cadence — Build
 color 0A
 
-echo.
-echo  ============================================================
-echo   Cadence  —  Build Pipeline
-echo   Produces:  dist\Cadence\Cadence.exe   (portable folder)
-echo              dist\Cadence_Setup_1.0.0.exe  (installer, if
-echo              Inno Setup 6 is installed)
-echo  ============================================================
-echo.
-
 cd /d "%~dp0"
+
+:: ── Read version from version.py ─────────────────────────────────────────────
+for /f "tokens=*" %%v in ('python -c "from version import __version__; print(__version__)"') do set APP_VERSION=%%v
+if not defined APP_VERSION ( echo [ERROR] Could not read version from version.py. & pause & exit /b 1 )
+
+echo.
+echo  ============================================================
+echo   Cadence  v%APP_VERSION%  —  Build Pipeline
+echo   Produces:  dist\Cadence\Cadence.exe   (portable folder)
+echo              dist\Cadence_Setup_%APP_VERSION%.exe  (installer)
+echo  ============================================================
+echo.
 
 :: ── 1. Check Python ──────────────────────────────────────────────────────────
 python --version >nul 2>&1
@@ -26,7 +29,7 @@ for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo [OK] %%v
 
 :: ── 2. Install / upgrade build dependencies ──────────────────────────────────
 echo.
-echo [STEP 1/4]  Installing build dependencies...
+echo [STEP 1/5]  Installing build dependencies...
 pip install --quiet --upgrade ^
     pyinstaller>=6.0 ^
     pystray ^
@@ -35,35 +38,39 @@ pip install --quiet --upgrade ^
     flask ^
     reportlab ^
     msal ^
-    requests
+    requests ^
+    waitress
 if errorlevel 1 ( echo [ERROR] pip install failed. & pause & exit /b 1 )
 echo [OK] Dependencies up to date.
 
 :: ── 3. Generate icon ─────────────────────────────────────────────────────────
 echo.
-echo [STEP 2/4]  Generating icon...
+echo [STEP 2/5]  Generating icon...
 python create_icon.py
 if errorlevel 1 ( echo [ERROR] Icon generation failed. & pause & exit /b 1 )
 echo [OK] static\icon.ico ready.
 
-:: ── 4. PyInstaller ───────────────────────────────────────────────────────────
+:: ── 4. Generate Windows version resource ─────────────────────────────────────
 echo.
-echo [STEP 3/4]  Building Cadence.exe with PyInstaller (60-120 sec)...
+echo [STEP 3/5]  Generating file_version_info.txt for v%APP_VERSION%...
+python generate_version_info.py
+if errorlevel 1 ( echo [ERROR] Version info generation failed. & pause & exit /b 1 )
+
+:: ── 5. PyInstaller ───────────────────────────────────────────────────────────
+echo.
+echo [STEP 4/5]  Building Cadence.exe with PyInstaller (60-120 sec)...
 echo             Please wait...
 pyinstaller cadence.spec --clean --noconfirm
 if errorlevel 1 ( echo [ERROR] PyInstaller build failed. & pause & exit /b 1 )
 echo [OK] dist\Cadence\Cadence.exe ready.
 
-:: ── 5. Inno Setup installer ──────────────────────────────────────────────────
+:: ── 6. Inno Setup installer ──────────────────────────────────────────────────
 echo.
-echo [STEP 4/4]  Looking for Inno Setup 6...
+echo [STEP 5/5]  Looking for Inno Setup 6...
 
 set "ISCC="
-:: Check PATH first
 where iscc >nul 2>&1 && set "ISCC=iscc"
 
-:: Use PowerShell to find ISCC.exe across all drives and all user-profile locations.
-:: This handles setups where the user profile or Program Files lives on a non-C: drive.
 if not defined ISCC (
     for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command ^
         "$found = $null; " ^
@@ -82,7 +89,6 @@ if not defined ISCC (
         if not "%%i"=="" ( set "ISCC=%%i" )
     )
 )
-:found_iscc
 
 if not defined ISCC (
     echo [SKIP]  Inno Setup not found — skipping installer creation.
@@ -91,25 +97,24 @@ if not defined ISCC (
     echo           1. Download Inno Setup 6 from https://jrsoftware.org/isdl.php
     echo           2. Install it, then re-run this build.bat
     echo.
-    echo         Portable app is still ready at:
-    echo           dist\Cadence\Cadence.exe
+    echo         Portable app is still ready at:  dist\Cadence\Cadence.exe
     goto :done
 )
 
 echo [OK] Found: %ISCC%
-echo        Compiling cadence.iss...
-"%ISCC%" cadence.iss
+echo        Compiling cadence.iss for v%APP_VERSION%...
+"%ISCC%" /DAppVersion=%APP_VERSION% cadence.iss
 if errorlevel 1 ( echo [ERROR] Inno Setup compilation failed. & pause & exit /b 1 )
-echo [OK] Installer ready at: dist\Cadence_Setup_1.0.0.exe
+echo [OK] Installer ready at: dist\Cadence_Setup_%APP_VERSION%.exe
 
 :done
 echo.
 echo  ============================================================
-echo   Build complete!
+echo   Build complete!  v%APP_VERSION%
 echo.
 echo   Portable app :  dist\Cadence\Cadence.exe
 if defined ISCC (
-echo   Installer    :  dist\Cadence_Setup_1.0.0.exe
+echo   Installer    :  dist\Cadence_Setup_%APP_VERSION%.exe
 )
 echo  ============================================================
 echo.

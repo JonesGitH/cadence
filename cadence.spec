@@ -13,25 +13,44 @@ reportlab_datas = collect_data_files('reportlab', includes=['**/*.afm', '**/*.pf
 
 a = Analysis(
     ['main.py'],
-    pathex=['.'],
+    pathex=['.', 'routes'],
     binaries=[],
     datas=[
         ('templates', 'templates'),
         ('static',    'static'),
     ] + openpyxl_datas + reportlab_datas,
     hiddenimports=[
+        # ── Cadence route modules ─────────────────────────────────────────────
+        'routes',
+        'routes.auth',
+        'routes.dashboard',
+        'routes.calendar',
+        'routes.clients',
+        'routes.invoices',
+        'routes.settings',
+        'helpers',
+        # ── Waitress WSGI server ──────────────────────────────────────────────
+        'waitress',
+        'waitress.server',
+        'waitress.task',
+        'waitress.channel',
+        'waitress.runner',
         # ── pystray (Windows tray backend) ──────────────────────────────────
         'pystray._win32',
+        'six',
+        'six.moves',
+        'six.moves.queue',
         # ── Pillow ───────────────────────────────────────────────────────────
         'PIL._imaging',
         'PIL.Image',
         'PIL.ImageDraw',
         # ── Flask / Jinja2 / Werkzeug ────────────────────────────────────────
+        'werkzeug.security',
         'jinja2.ext',
         'jinja2.loaders',
-        'werkzeug.serving',
         'werkzeug.routing',
         'werkzeug.middleware.shared_data',
+        'werkzeug.serving',  # retained for flask debug mode only
         # ── MSAL / requests ──────────────────────────────────────────────────
         'msal',
         'msal.application',

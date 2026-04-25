@@ -16,7 +16,7 @@
 </div>
 
 {% if invoices %}
-<div class="flex gap-2 mb-4" style="align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:10; background:var(--bg); padding:12px 0; margin-top:-12px">
+<div class="filter-bar" style="position:sticky; top:0; z-index:10; margin-top:-4px">
   <select id="filter-client" class="filter-select">
     <option value="">All Students</option>
     {% for c in filter_clients %}
@@ -63,8 +63,8 @@
           <td><span class="badge badge-blue">{{ inv.invoice_number }}</span></td>
           <td class="font-bold">{{ inv.client_name }}</td>
           <td class="text-muted" data-sort-value="{{ inv.year }}-{{ '%02d'|format(inv.month) }}">{{ month_name(inv.month, inv.year) }}</td>
-          <td class="text-right text-muted" data-sort-value="{{ inv.total_hours }}">{{ "%.2f"|format(inv.total_hours) }}</td>
-          <td class="text-right font-bold" data-sort-value="{{ inv.total_amount }}">${{ "%.2f"|format(inv.total_amount) }}</td>
+          <td class="text-right text-muted text-mono" data-sort-value="{{ inv.total_hours }}">{{ "%.2f"|format(inv.total_hours) }}</td>
+          <td class="text-right font-bold text-mono" data-sort-value="{{ inv.total_amount }}">${{ "%.2f"|format(inv.total_amount) }}</td>
           <td data-sort-value="{{ 'paid' if inv.paid else 'unpaid' }}">
             {% if inv.paid %}
             <span class="status-pill status-paid">
@@ -99,8 +99,8 @@
       <tfoot>
         <tr>
           <td colspan="3" class="font-bold">Total ({{ invoices|length }} invoice{{ 's' if invoices|length != 1 else '' }})</td>
-          <td class="text-right font-bold">{{ "%.2f"|format(invoices|sum(attribute='total_hours')) }}</td>
-          <td class="text-right font-bold">${{ "%.2f"|format(invoices|sum(attribute='total_amount')) }}</td>
+          <td class="text-right font-bold text-mono">{{ "%.2f"|format(invoices|sum(attribute='total_hours')) }}</td>
+          <td class="text-right font-bold text-mono">${{ "%.2f"|format(invoices|sum(attribute='total_amount')) }}</td>
           <td colspan="3"></td>
         </tr>
       </tfoot>

@@ -16,6 +16,7 @@
   <button type="button" class="tab" data-tab-target="tab-calendars">Calendars</button>
   <button type="button" class="tab" data-tab-target="tab-backup">Backup</button>
   <button type="button" class="tab" data-tab-target="tab-import">Import</button>
+  <button type="button" class="tab" data-tab-target="tab-security">Security</button>
 </div>
 
 <!-- Business & Rate -->
@@ -378,4 +379,126 @@
   </div>
 </div>
 </div>
+
+<!-- Security -->
+<div class="tab-panel" id="tab-security">
+
+  <!-- Status card -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title">Password Protection</div>
+    {% if pw_set %}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="display:inline-flex;align-items:center;gap:6px;
+                     background:#dcfce7;color:#166534;border-radius:20px;
+                     padding:4px 12px;font-size:13px;font-weight:600">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M9 12l2 2 4-4"/><rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Enabled
+        </span>
+        {% if pw_expires_in is not none %}
+          {% if pw_expires_in < 0 %}
+            <span style="color:#b91c1c;font-size:13px;font-weight:600">&#9888; Password expired — please change it</span>
+          {% elif pw_expires_in <= 14 %}
+            <span style="color:#b45309;font-size:13px">&#9888; Expires in {{ pw_expires_in }} day{{ 's' if pw_expires_in != 1 }} — change soon</span>
+          {% else %}
+            <span style="color:var(--muted);font-size:13px">Expires in {{ pw_expires_in }} days</span>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- Change password -->
+      <form method="POST" action="{{ url_for('security_change_password') }}">
+        <div style="font-weight:600;font-size:14px;margin-bottom:12px">Change Password</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sec_current">Current Password</label>
+            <input type="password" id="sec_current" name="current_password"
+                   autocomplete="current-password">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sec_new">New Password</label>
+            <input type="password" id="sec_new" name="new_password"
+                   autocomplete="new-password">
+            <span class="form-hint">Minimum 8 characters. Cannot be a previously used password.</span>
+          </div>
+          <div class="form-group">
+            <label for="sec_confirm">Confirm New Password</label>
+            <input type="password" id="sec_confirm" name="confirm_password"
+                   autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Change Password</button>
+      </form>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:28px 0">
+
+      <!-- Remove password -->
+      <div style="font-weight:600;font-size:14px;margin-bottom:8px;color:#dc2626">
+        Remove Password Protection
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+        Disables the login screen. Anyone who opens Cadence will have full access.
+      </p>
+      <form method="POST" action="{{ url_for('security_remove_password') }}"
+            onsubmit="return confirm('Remove password protection? Anyone on this PC can open Cadence.')">
+        <div class="form-group" style="max-width:280px">
+          <label for="sec_remove_current">Confirm with current password</label>
+          <input type="password" id="sec_remove_current" name="current_password"
+                 autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-danger">Remove Password Protection</button>
+      </form>
+
+    {% else %}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <span style="display:inline-flex;align-items:center;gap:6px;
+                     background:#f1f5f9;color:var(--muted);border-radius:20px;
+                     padding:4px 12px;font-size:13px;font-weight:600">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+          </svg>
+          Not enabled
+        </span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+        Set a password to protect Cadence. You will be prompted each time the app is opened.
+        Passwords must be changed every 6 months and cannot be reused.
+      </p>
+      <form method="POST" action="{{ url_for('security_set_password') }}">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sec_new_initial">Password</label>
+            <input type="password" id="sec_new_initial" name="new_password"
+                   autocomplete="new-password">
+            <span class="form-hint">Minimum 8 characters.</span>
+          </div>
+          <div class="form-group">
+            <label for="sec_confirm_initial">Confirm Password</label>
+            <input type="password" id="sec_confirm_initial" name="confirm_password"
+                   autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Enable Password Protection</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- Policy summary -->
+  <div class="card">
+    <div class="card-title">Password Policy</div>
+    <ul style="font-size:13px;color:var(--muted);padding-left:20px;line-height:1.8;margin:0">
+      <li>Minimum 8 characters</li>
+      <li>Must be changed every 6 months (180 days)</li>
+      <li>Previously used passwords cannot be reused — ever</li>
+      <li>You will be warned when expiry is within 14 days</li>
+    </ul>
+  </div>
+
+</div>
+
 {% endblock %}

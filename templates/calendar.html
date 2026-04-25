@@ -9,10 +9,16 @@
   </div>
   <div class="flex gap-2" style="align-items:center">
     <a href="{{ url_for('calendar_view', month=prev_month, year=prev_year) }}"
-       class="btn btn-secondary btn-sm">&#8592; Prev</a>
+       class="btn btn-secondary btn-sm">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Prev
+    </a>
     <span class="cal-month-label">{{ month_name_str }} {{ year }}</span>
     <a href="{{ url_for('calendar_view', month=next_month, year=next_year) }}"
-       class="btn btn-secondary btn-sm">Next &#8594;</a>
+       class="btn btn-secondary btn-sm">
+      Next
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
   </div>
 </div>
 
@@ -63,7 +69,7 @@
 
         {% set items = by_day[day] %}
         {% for item in items[:3] %}
-        <div class="cal-chip {% if item.student %}cal-chip-matched{% endif %}"
+        <div class="cal-chip {% if item.is_all_day %}cal-chip-allday{% elif item.student %}cal-chip-matched{% endif %}"
              data-entry-id="{{ item.entry_id }}"
              data-subject="{{ item.subject|e }}"
              data-date="{{ item.date }}"
@@ -95,10 +101,13 @@
 <!-- Legend -->
 <div class="flex gap-3 mt-4" style="font-size:12px; color:var(--muted); align-items:center; flex-wrap:wrap">
   <span class="cal-legend-item" title="Appointment subject contains a student's Outlook initials">
-    <span class="cal-legend-dot" style="background:var(--primary)"></span> Student session
+    <span class="cal-legend-dot" style="background:#DBEAFE; border:1px solid var(--primary)"></span> Student session
   </span>
   <span class="cal-legend-item" title="No matching student initials found in the appointment subject">
-    <span class="cal-legend-dot" style="background:#94a3b8"></span> Other appointment
+    <span class="cal-legend-dot" style="background:#f1f5f9; border:1px solid #cbd5e1"></span> Other appointment
+  </span>
+  <span class="cal-legend-item" title="All-day event">
+    <span class="cal-legend-dot" style="background:#fef9c3; border:1px solid #d97706"></span> All-day event
   </span>
   <span style="margin-left:auto; font-size:11px">Click an event to edit · Click a date to see all events</span>
 </div>
@@ -170,6 +179,7 @@ var CAL_EVENTS = {
       endDisplay:   {{ item.end_time | tojson }},
       calendar:     {{ item.calendar | tojson }},
       student:      {{ (item.student or '') | tojson }},
+      isAllDay:     {{ item.is_all_day | tojson }},
     },
     {% endfor %}
   ],
@@ -187,9 +197,9 @@ function openDayModal(day) {
 
   var html = '';
   items.forEach(function(item) {
-    var matched = item.student ? 'day-event-matched' : '';
+    var cls = item.isAllDay ? 'day-event-allday' : (item.student ? 'day-event-matched' : '');
     html +=
-      '<div class="day-event ' + matched + '" onclick="openEditFromDay(' + JSON.stringify(item).replace(/"/g,"&quot;") + ')">' +
+      '<div class="day-event ' + cls + '" onclick="openEditFromDay(' + JSON.stringify(item).replace(/"/g,"&quot;") + ')">' +
         '<div class="day-event-time">' + item.startDisplay + ' – ' + item.endDisplay + '</div>' +
         '<div class="day-event-title">' + escHtml(item.subject) + '</div>' +
         (item.student ? '<div class="day-event-student">' + escHtml(item.student) + '</div>' : '') +

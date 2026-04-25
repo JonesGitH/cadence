@@ -1,7 +1,10 @@
 import sqlite3
 import os
+import json
 import calendar
+from datetime import datetime, timedelta
 from config import load as _load_config
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = _load_config()['db_path']
 
@@ -43,6 +46,16 @@ def init_db():
             parent_city     TEXT,
             parent_state    TEXT,
             parent_zip      TEXT,
+            parent2_address TEXT,
+            parent2_city    TEXT,
+            parent2_state   TEXT,
+            parent2_zip     TEXT,
+            bill_to_parent       TEXT DEFAULT '1',
+            bill_to_custom_name  TEXT,
+            bill_to_custom_addr  TEXT,
+            bill_to_custom_city  TEXT,
+            bill_to_custom_state TEXT,
+            bill_to_custom_zip   TEXT,
             intake_complete INTEGER DEFAULT 0,
             roi_complete    INTEGER DEFAULT 0,
             active          INTEGER DEFAULT 1,
@@ -112,6 +125,16 @@ def init_db():
         ('parent_city',     'TEXT'),
         ('parent_state',    'TEXT'),
         ('parent_zip',      'TEXT'),
+        ('parent2_address', 'TEXT'),
+        ('parent2_city',    'TEXT'),
+        ('parent2_state',   'TEXT'),
+        ('parent2_zip',     'TEXT'),
+        ('bill_to_parent',       "TEXT DEFAULT '1'"),
+        ('bill_to_custom_name',  'TEXT'),
+        ('bill_to_custom_addr',  'TEXT'),
+        ('bill_to_custom_city',  'TEXT'),
+        ('bill_to_custom_state', 'TEXT'),
+        ('bill_to_custom_zip',   'TEXT'),
         ('intake_complete', 'INTEGER DEFAULT 0'),
         ('roi_complete',    'INTEGER DEFAULT 0'),
         ('notes',           'TEXT'),
@@ -176,6 +199,90 @@ def set_setting(key, value):
     conn.close()
 
 
+# ── Flask secret key (persisted so sessions survive app restarts) ─────────────
+
+def get_or_create_secret_key() -> str:
+    key = get_setting('flask_secret_key')
+    if not key:
+        import secrets
+        key = secrets.token_hex(32)
+        set_setting('flask_secret_key', key)
+    return key
+
+
+# ── Password security ─────────────────────────────────────────────────────────
+
+def password_is_set() -> bool:
+    return bool(get_setting('security_password_hash'))
+
+
+def verify_password(password: str) -> bool:
+    h = get_setting('security_password_hash')
+    if not h:
+        return True  # no password configured
+    return check_password_hash(h, password)
+
+
+def password_in_history(password: str) -> bool:
+    """Return True if *password* matches the current or any historical hash."""
+    current = get_setting('security_password_hash')
+    if current and check_password_hash(current, password):
+        return True
+    try:
+        history = json.loads(get_setting('security_password_history') or '[]')
+    except (TypeError, ValueError):
+        history = []
+    return any(check_password_hash(h, password) for h in history)
+
+
+def set_new_password(new_password: str) -> None:
+    """Hash *new_password*, archive the current hash, record changed timestamp."""
+    current = get_setting('security_password_hash')
+    if current:
+        try:
+            history = json.loads(get_setting('security_password_history') or '[]')
+        except (TypeError, ValueError):
+            history = []
+        history.append(current)
+        set_setting('security_password_history', json.dumps(history))
+    set_setting('security_password_hash',       generate_password_hash(new_password))
+    set_setting('security_password_changed_at', datetime.now().isoformat())
+
+
+def remove_password() -> None:
+    """Disable password protection (archives current hash into history)."""
+    current = get_setting('security_password_hash')
+    if current:
+        try:
+            history = json.loads(get_setting('security_password_history') or '[]')
+        except (TypeError, ValueError):
+            history = []
+        history.append(current)
+        set_setting('security_password_history', json.dumps(history))
+    set_setting('security_password_hash',       '')
+    set_setting('security_password_changed_at', '')
+
+
+def password_expires_in_days() -> int | None:
+    """Days until password expires (negative = already overdue). None if no password."""
+    changed_str = get_setting('security_password_changed_at')
+    if not changed_str:
+        return None
+    try:
+        changed = datetime.fromisoformat(changed_str)
+        # Normalise to naive UTC so subtraction with datetime.now() always works
+        if changed.tzinfo is not None:
+            changed = changed.replace(tzinfo=None)
+        return (changed + timedelta(days=180) - datetime.now()).days
+    except (TypeError, ValueError):
+        return None
+
+
+def is_password_expired() -> bool:
+    days = password_expires_in_days()
+    return days is not None and days < 0
+
+
 _INVOICE_START = 5549  # first invoice will be 5550
 
 def next_invoice_number(conn=None):
@@ -235,6 +342,18 @@ def get_enabled_calendar_names():
     rows = conn.execute('SELECT outlook_name FROM calendars WHERE enabled = 1').fetchall()
     conn.close()
     return [r['outlook_name'] for r in rows]
+
+
+def get_enabled_calendars():
+    """Return [(name, graph_id)] for all enabled calendars.
+    graph_id may be '' for calendars discovered before IDs were stored.
+    """
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT outlook_name, graph_id FROM calendars WHERE enabled = 1'
+    ).fetchall()
+    conn.close()
+    return [(r['outlook_name'], r['graph_id'] or '') for r in rows]
 
 
 def upsert_calendars(calendars):

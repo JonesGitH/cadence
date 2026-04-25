@@ -77,19 +77,19 @@
         <tr>
           <td class="font-bold">{{ month_name(row.month, year) }}</td>
           <td class="text-right text-muted">{{ row.invoice_count }}</td>
-          <td class="text-right text-muted">{{ "%.1f"|format(row.total_hours) }}</td>
-          <td class="text-right">${{ "%.2f"|format(row.total_amount) }}</td>
-          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
-          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
+          <td class="text-right text-muted text-mono">{{ "%.1f"|format(row.total_hours) }}</td>
+          <td class="text-right text-mono">${{ "%.2f"|format(row.total_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
         </tr>
         {% endfor %}
         <tr style="border-top:2px solid var(--border); font-weight:700">
           <td>Total</td>
-          <td class="text-right">{{ totals.invoice_count }}</td>
-          <td class="text-right">{{ "%.1f"|format(totals.total_hours) }}</td>
-          <td class="text-right">${{ "%.2f"|format(totals.total_amount) }}</td>
-          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(totals.paid_amount) }}</td>
-          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(totals.total_amount - totals.paid_amount) }}</td>
+          <td class="text-right text-mono">{{ totals.invoice_count }}</td>
+          <td class="text-right text-mono">{{ "%.1f"|format(totals.total_hours) }}</td>
+          <td class="text-right text-mono">${{ "%.2f"|format(totals.total_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--success)">${{ "%.2f"|format(totals.paid_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--warning)">${{ "%.2f"|format(totals.total_amount - totals.paid_amount) }}</td>
         </tr>
       </tbody>
     </table>
@@ -117,11 +117,11 @@
         {% for row in by_student %}
         <tr>
           <td class="font-bold">{{ row.name }}</td>
-          <td class="text-right text-muted">{{ row.invoice_count }}</td>
-          <td class="text-right text-muted">{{ "%.1f"|format(row.total_hours) }}</td>
-          <td class="text-right">${{ "%.2f"|format(row.total_amount) }}</td>
-          <td class="text-right" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
-          <td class="text-right" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
+          <td class="text-right text-muted text-mono">{{ row.invoice_count }}</td>
+          <td class="text-right text-muted text-mono">{{ "%.1f"|format(row.total_hours) }}</td>
+          <td class="text-right text-mono">${{ "%.2f"|format(row.total_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--success)">${{ "%.2f"|format(row.paid_amount) }}</td>
+          <td class="text-right text-mono" style="color:var(--warning)">${{ "%.2f"|format(row.total_amount - row.paid_amount) }}</td>
         </tr>
         {% endfor %}
       </tbody>

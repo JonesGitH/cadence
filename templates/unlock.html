@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unlock — Cadence</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh;
+           background:var(--bg); margin:0; }
+    .unlock-card {
+      width: 100%; max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px 36px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    }
+    .unlock-logo {
+      display: flex; align-items: center; gap: 10px;
+      justify-content: center; margin-bottom: 8px;
+    }
+    .unlock-diamond {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    }
+    .unlock-brand  { font-size: 24px; font-weight: 700; color: var(--text); }
+    .unlock-sub    { text-align:center; color:var(--muted); font-size:13px; margin-bottom:28px; }
+    .unlock-title  { text-align:center; font-size:16px; font-weight:600;
+                     color:var(--text); margin-bottom:20px; }
+    .unlock-error  { background: #fee2e2; border:1px solid #fca5a5; color:#b91c1c;
+                     border-radius:8px; padding:10px 14px; font-size:13px;
+                     margin-bottom:16px; }
+    .unlock-card .form-group { margin-bottom: 20px; }
+    .unlock-card label { display:block; font-size:13px; font-weight:500;
+                         color:var(--text); margin-bottom:6px; }
+    .unlock-card input[type=password] {
+      width:100%; box-sizing:border-box;
+      padding:10px 12px; border-radius:8px;
+      border:1px solid var(--border); background:var(--bg);
+      color:var(--text); font-size:14px;
+    }
+    .unlock-card input[type=password]:focus {
+      outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15);
+    }
+    .unlock-btn {
+      width:100%; padding:11px; border-radius:8px;
+      background:var(--accent); color:#fff; font-size:14px;
+      font-weight:600; border:none; cursor:pointer; transition:opacity .15s;
+    }
+    .unlock-btn:hover { opacity:.9; }
+  </style>
+</head>
+<body>
+  <div class="unlock-card">
+    <div class="unlock-logo">
+      <div class="unlock-diamond"></div>
+      <span class="unlock-brand">Cadence</span>
+    </div>
+    <p class="unlock-sub">Your consulting rhythm</p>
+    <p class="unlock-title">Enter your password to continue</p>
+
+    {% if error %}
+      <div class="unlock-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('unlock') }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autofocus autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="unlock-btn">Unlock Cadence</button>
+    </form>
+  </div>
+</body>
+</html>

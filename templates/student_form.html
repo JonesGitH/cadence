@@ -5,7 +5,10 @@
 <div class="page-header">
   <div class="page-header-left">
     <h2>{% if student %}Edit Student{% else %}Add Student{% endif %}</h2>
-    <p><a href="{{ url_for('clients') }}">← Back to Students</a></p>
+    <p><a href="{{ url_for('clients') }}" style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Students
+    </a></p>
   </div>
 </div>
 
@@ -65,9 +68,15 @@
         <label for="parent2_name">Parent 2 Name</label>
         <input type="text" id="parent2_name" name="parent2_name"
                value="{{ student.parent2_name if student else '' }}" placeholder="John Jones">
+        <label class="check-item" style="margin-top:8px;font-size:13px;font-weight:normal">
+          <input type="checkbox" id="parent2_diff_addr"
+                 {% if student and (student.parent2_address or student.parent2_city or student.parent2_state or student.parent2_zip) %}checked{% endif %}
+                 onchange="toggleParent2Addr(this)">
+          Different address for Parent 2
+        </label>
       </div>
       <div class="form-group" style="grid-column:1/-1">
-        <label for="parent_address">Street Address</label>
+        <label for="parent_address">Street Address <span class="form-hint" style="display:inline;margin-left:4px">(Parent 1)</span></label>
         <input type="text" id="parent_address" name="parent_address"
                value="{{ student.parent_address if student else '' }}" placeholder="123 Main St">
         <span class="form-hint">Printed on the invoice bill-to block</span>
@@ -89,6 +98,90 @@
                  value="{{ student.parent_zip if student else '' }}" placeholder="78701">
         </div>
       </div>
+      <div id="parent2-addr" style="grid-column:1/-1; display:{% if student and (student.parent2_address or student.parent2_city or student.parent2_state or student.parent2_zip) %}block{% else %}none{% endif %}">
+        <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:14px; font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.06em; text-transform:uppercase">Parent 2 Address</div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px">
+          <div class="form-group" style="grid-column:1/-1">
+            <label for="parent2_address">Street Address</label>
+            <input type="text" id="parent2_address" name="parent2_address"
+                   value="{{ student.parent2_address if student else '' }}" placeholder="456 Oak Ave">
+          </div>
+          <div class="form-group">
+            <label for="parent2_city">City</label>
+            <input type="text" id="parent2_city" name="parent2_city"
+                   value="{{ student.parent2_city if student else '' }}" placeholder="Austin">
+          </div>
+          <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div class="form-group">
+              <label for="parent2_state">State</label>
+              <input type="text" id="parent2_state" name="parent2_state"
+                     value="{{ student.parent2_state if student else '' }}" placeholder="TX" maxlength="2">
+            </div>
+            <div class="form-group">
+              <label for="parent2_zip">Zip</label>
+              <input type="text" id="parent2_zip" name="parent2_zip"
+                     value="{{ student.parent2_zip if student else '' }}" placeholder="78701">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Bill To -->
+      <div style="grid-column:1/-1; border-top:1px solid var(--border); padding-top:14px; margin-top:4px">
+        <div style="font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px">Bill Invoices To</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+          <label class="check-item" style="font-size:13px;font-weight:normal">
+            <input type="radio" name="bill_to_parent" value="1"
+                   {% if not student or (student.bill_to_parent or '1') == '1' %}checked{% endif %}
+                   onchange="toggleBillToCustom(this)">
+            Parent 1
+          </label>
+          <label class="check-item" style="font-size:13px;font-weight:normal">
+            <input type="radio" name="bill_to_parent" value="2"
+                   {% if student and student.bill_to_parent == '2' %}checked{% endif %}
+                   onchange="toggleBillToCustom(this)">
+            Parent 2
+          </label>
+          <label class="check-item" style="font-size:13px;font-weight:normal">
+            <input type="radio" name="bill_to_parent" value="custom"
+                   {% if student and student.bill_to_parent == 'custom' %}checked{% endif %}
+                   onchange="toggleBillToCustom(this)">
+            Other
+          </label>
+        </div>
+        <div id="bill-to-custom" style="display:{% if student and student.bill_to_parent == 'custom' %}block{% else %}none{% endif %}">
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label for="bill_to_custom_name">Bill To Name <span style="color:var(--danger)">*</span></label>
+              <input type="text" id="bill_to_custom_name" name="bill_to_custom_name"
+                     value="{{ student.bill_to_custom_name if student else '' }}"
+                     placeholder="e.g. Acme Corp, Grandparent Name">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label for="bill_to_custom_addr">Street Address</label>
+              <input type="text" id="bill_to_custom_addr" name="bill_to_custom_addr"
+                     value="{{ student.bill_to_custom_addr if student else '' }}" placeholder="123 Main St">
+            </div>
+            <div class="form-group">
+              <label for="bill_to_custom_city">City</label>
+              <input type="text" id="bill_to_custom_city" name="bill_to_custom_city"
+                     value="{{ student.bill_to_custom_city if student else '' }}" placeholder="Austin">
+            </div>
+            <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+              <div class="form-group">
+                <label for="bill_to_custom_state">State</label>
+                <input type="text" id="bill_to_custom_state" name="bill_to_custom_state"
+                       value="{{ student.bill_to_custom_state if student else '' }}" placeholder="TX" maxlength="2">
+              </div>
+              <div class="form-group">
+                <label for="bill_to_custom_zip">Zip</label>
+                <input type="text" id="bill_to_custom_zip" name="bill_to_custom_zip"
+                       value="{{ student.bill_to_custom_zip if student else '' }}" placeholder="78701">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email"
@@ -199,4 +292,21 @@
   </div>
 
 </form>
+
+<script>
+function toggleParent2Addr(cb) {
+  var el = document.getElementById('parent2-addr');
+  el.style.display = cb.checked ? 'block' : 'none';
+  if (!cb.checked) {
+    el.querySelectorAll('input').forEach(function(i) { i.value = ''; });
+    // reset bill-to to parent 1 when parent2 addr is hidden
+    var r1 = document.querySelector('input[name="bill_to_parent"][value="1"]');
+    if (r1) { r1.checked = true; toggleBillToCustom(r1); }
+  }
+}
+function toggleBillToCustom(radio) {
+  var el = document.getElementById('bill-to-custom');
+  el.style.display = (radio.value === 'custom' && radio.checked) ? 'block' : 'none';
+}
+</script>
 {% endblock %}
