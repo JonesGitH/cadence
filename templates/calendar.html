@@ -7,18 +7,46 @@
     <h2>Calendar</h2>
     <p>Appointments from your enabled Microsoft 365 calendars. Click any event to see details.</p>
   </div>
-  <div class="flex gap-2" style="align-items:center">
-    <a href="{{ url_for('calendar_view', month=prev_month, year=prev_year) }}"
+
+  <div class="flex gap-2" style="align-items:center; flex-wrap:wrap">
+
+    {# ── View toggle ── #}
+    <div class="cal-view-toggle">
+      <a href="{{ url_for('calendar_view', view='week') }}"
+         class="cal-view-btn {% if view == 'week' %}cal-view-btn-active{% endif %}">Week</a>
+      <a href="{{ url_for('calendar_view', view='month', month=month, year=year) }}"
+         class="cal-view-btn {% if view == 'month' %}cal-view-btn-active{% endif %}">Month</a>
+    </div>
+
+    {# ── Navigation ── #}
+    {% if view == 'week' %}
+    <a href="{{ url_for('calendar_view', view='week', date=prev_week_date) }}"
+       class="btn btn-secondary btn-sm">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Prev
+    </a>
+    <span class="cal-month-label">{{ week_label }}</span>
+    <a href="{{ url_for('calendar_view', view='week', date=next_week_date) }}"
+       class="btn btn-secondary btn-sm">
+      Next
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="{{ url_for('calendar_view', view='week') }}"
+       class="btn btn-secondary btn-sm">Today</a>
+    {% else %}
+    <a href="{{ url_for('calendar_view', view='month', month=prev_month, year=prev_year) }}"
        class="btn btn-secondary btn-sm">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       Prev
     </a>
     <span class="cal-month-label">{{ month_name_str }} {{ year }}</span>
-    <a href="{{ url_for('calendar_view', month=next_month, year=next_year) }}"
+    <a href="{{ url_for('calendar_view', view='month', month=next_month, year=next_year) }}"
        class="btn btn-secondary btn-sm">
       Next
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
+    {% endif %}
+
   </div>
 </div>
 
@@ -42,25 +70,160 @@
   {% endif %}
 </div>
 {% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{# WEEK VIEW                                                                   #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{% if view == 'week' %}
+
+<div class="card" style="padding:0; overflow:hidden">
+
+  {# ── Day header row ── #}
+  <div class="cal-week-header">
+    <div class="cal-week-gutter"></div>
+    {% for day in week_days %}
+    {% set is_today = (day == today_date) %}
+    <div class="cal-week-header-cell {% if is_today %}cal-week-header-today{% endif %}">
+      <div class="cal-week-dow">{{ day.strftime('%a') }}</div>
+      <div class="cal-week-date {% if is_today %}cal-week-date-today{% endif %}">{{ day.day }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── All-day events row (only shown if any exist) ── #}
+  {% set has_allday = namespace(v=false) %}
+  {% for day in week_days %}
+    {% if by_date[day.strftime('%Y-%m-%d')] | selectattr('is_all_day') | list %}
+      {% set has_allday.v = true %}
+    {% endif %}
+  {% endfor %}
+
+  {% if has_allday.v %}
+  <div class="cal-allday-row">
+    <div class="cal-week-gutter cal-allday-label">All day</div>
+    {% for day in week_days %}
+    {% set date_str = day.strftime('%Y-%m-%d') %}
+    <div class="cal-allday-col">
+      {% for item in by_date[date_str] if item.is_all_day %}
+      <div class="cal-allday-chip"
+           style="{% if item.color %}background:{{ item.color }}22; border-color:{{ item.color }};{% endif %}"
+           onclick="openEditModal(this)"
+           data-entry-id="{{ item.entry_id }}"
+           data-subject="{{ item.subject|e }}"
+           data-date="{{ item.date }}"
+           data-start="{{ item.start_24 }}"
+           data-end="{{ item.end_24 }}"
+           data-calendar="{{ item.calendar|e }}"
+           data-start-display="{{ item.start_time }}"
+           data-end-display="{{ item.end_time }}"
+           title="{{ item.subject }}">
+        {{ item.student or item.subject }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Scrollable time grid ── #}
+  <div class="cal-week-scroll">
+    <div class="cal-week-grid">
+
+      {# Time label column #}
+      {% set total_hours = day_end - day_start %}
+      <div class="cal-time-col" style="height:{{ total_hours * hour_px }}px">
+        {% for h in range(day_start, day_end + 1) %}
+        <div class="cal-time-label" style="top:{{ (h - day_start) * hour_px }}px">
+          {% if h == 12 %}12 PM{% elif h < 12 %}{{ h }} AM{% else %}{{ h - 12 }} PM{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Day columns #}
+      {% for day in week_days %}
+      {% set date_str = day.strftime('%Y-%m-%d') %}
+      {% set is_today = (day == today_date) %}
+      <div class="cal-day-col {% if is_today %}cal-day-col-today{% endif %}"
+           style="height:{{ total_hours * hour_px }}px">
+
+        {# Hour grid lines #}
+        {% for h in range(total_hours + 1) %}
+        <div class="cal-hour-line {% if h == 0 %}cal-hour-line-top{% endif %}"
+             style="top:{{ h * hour_px }}px"></div>
+        {% endfor %}
+        {# Half-hour lines #}
+        {% for h in range(total_hours) %}
+        <div class="cal-half-line" style="top:{{ h * hour_px + hour_px // 2 }}px"></div>
+        {% endfor %}
+
+        {# Events #}
+        {% for item in by_date[date_str] if not item.is_all_day %}
+          {% set sh = item.start_24.split(':')[0]|int %}
+          {% set sm = item.start_24.split(':')[1]|int %}
+          {% set eh = item.end_24.split(':')[0]|int %}
+          {% set em = item.end_24.split(':')[1]|int %}
+          {% set top_px = ((sh - day_start) * hour_px + (sm / 60 * hour_px))|round|int %}
+          {% set dur_min = (eh * 60 + em) - (sh * 60 + sm) %}
+          {% set raw_h = (dur_min / 60 * hour_px)|round|int %}
+          {% set height_px = raw_h if raw_h >= 22 else 22 %}
+          {# Choose border/bg color: Outlook category > student blue > gray #}
+          {% if item.color %}
+            {% set blk_border = item.color %}
+            {% set blk_bg     = item.color + '22' %}
+            {% set blk_text   = item.color %}
+          {% elif item.student %}
+            {% set blk_border = '#2563EB' %}
+            {% set blk_bg     = '#DBEAFE' %}
+            {% set blk_text   = '#1D4ED8' %}
+          {% else %}
+            {% set blk_border = '#94A3B8' %}
+            {% set blk_bg     = '#F1F5F9' %}
+            {% set blk_text   = '#475569' %}
+          {% endif %}
+        <div class="cal-block"
+             style="top:{{ top_px }}px; height:{{ height_px }}px;
+                    background:{{ blk_bg }};
+                    border-left-color:{{ blk_border }};
+                    color:{{ blk_text }}"
+             data-entry-id="{{ item.entry_id }}"
+             data-subject="{{ item.subject|e }}"
+             data-date="{{ item.date }}"
+             data-start="{{ item.start_24 }}"
+             data-end="{{ item.end_24 }}"
+             data-calendar="{{ item.calendar|e }}"
+             data-start-display="{{ item.start_time }}"
+             data-end-display="{{ item.end_time }}"
+             onclick="openEditModal(this)"
+             title="{{ item.subject }}">
+          <div class="cal-block-time">{{ item.start_time }}</div>
+          <div class="cal-block-title">{{ item.student or item.subject }}</div>
+        </div>
+        {% endfor %}
+
+      </div>
+      {% endfor %}
+
+    </div>{# /cal-week-grid #}
+  </div>{# /cal-week-scroll #}
+</div>{# /card #}
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{# MONTH VIEW                                                                  #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{% else %}
+
 <div class="cal-wrap card" style="padding:0; overflow:hidden">
 
-  <!-- Day-of-week header -->
   <div class="cal-header-row">
-    {% for dow in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] %}
+    {% for dow in ['Monday','Tuesday','Wednesday','Thursday','Friday'] %}
     <div class="cal-header-cell">{{ dow }}</div>
     {% endfor %}
   </div>
 
-  <!-- Weeks -->
-  {% set total_cells = first_weekday + days_in_month %}
-  {% set total_rows  = ((total_cells - 1) // 7) + 1 %}
-
-  {% for row in range(total_rows) %}
+  {% for week in weeks %}
   <div class="cal-row">
-    {% for col in range(7) %}
-      {% set cell_idx = row * 7 + col %}
-      {% set day      = cell_idx - first_weekday + 1 %}
-      {% if day < 1 or day > days_in_month %}
+    {% for day in week %}
+      {% if day is none %}
       <div class="cal-cell cal-cell-out"></div>
       {% else %}
       <div class="cal-cell {% if today_day == day %}cal-cell-today{% endif %}"
@@ -69,7 +232,21 @@
 
         {% set items = by_day[day] %}
         {% for item in items[:3] %}
-        <div class="cal-chip {% if item.is_all_day %}cal-chip-allday{% elif item.student %}cal-chip-matched{% endif %}"
+        {% if item.color %}
+          {% set chip_style = 'background:' + item.color + '22; border-left:3px solid ' + item.color + ';' %}
+          {% set title_style = 'color:' + item.color %}
+        {% elif item.is_all_day %}
+          {% set chip_style = '' %}
+          {% set title_style = '' %}
+        {% elif item.student %}
+          {% set chip_style = '' %}
+          {% set title_style = '' %}
+        {% else %}
+          {% set chip_style = '' %}
+          {% set title_style = '' %}
+        {% endif %}
+        <div class="cal-chip {% if item.is_all_day and not item.color %}cal-chip-allday{% elif item.student and not item.color %}cal-chip-matched{% endif %}"
+             style="{{ chip_style }}"
              data-entry-id="{{ item.entry_id }}"
              data-subject="{{ item.subject|e }}"
              data-date="{{ item.date }}"
@@ -81,7 +258,7 @@
              onclick="event.stopPropagation(); openEditModal(this)"
              title="{{ item.subject }}">
           <span class="cal-chip-time">{{ item.start_time }}</span>
-          <span class="cal-chip-title">{% if item.student %}{{ item.student }}{% else %}{{ item.subject }}{% endif %}</span>
+          <span class="cal-chip-title" style="{{ title_style }}">{% if item.student %}{{ item.student }}{% else %}{{ item.subject }}{% endif %}</span>
         </div>
         {% endfor %}
 
@@ -98,23 +275,28 @@
 
 </div>
 
+{% endif %}{# end view toggle #}
+
 <!-- Legend -->
 <div class="flex gap-3 mt-4" style="font-size:12px; color:var(--muted); align-items:center; flex-wrap:wrap">
-  <span class="cal-legend-item" title="Appointment subject contains a student's Outlook initials">
-    <span class="cal-legend-dot" style="background:#DBEAFE; border:1px solid var(--primary)"></span> Student session
+  <span class="cal-legend-item">
+    <span class="cal-legend-dot" style="background:#DBEAFE; border:1px solid #2563EB"></span> Student session
   </span>
-  <span class="cal-legend-item" title="No matching student initials found in the appointment subject">
+  <span class="cal-legend-item">
     <span class="cal-legend-dot" style="background:#f1f5f9; border:1px solid #cbd5e1"></span> Other appointment
   </span>
-  <span class="cal-legend-item" title="All-day event">
+  <span class="cal-legend-item">
     <span class="cal-legend-dot" style="background:#fef9c3; border:1px solid #d97706"></span> All-day event
   </span>
-  <span style="margin-left:auto; font-size:11px">Click an event to edit · Click a date to see all events</span>
+  <span class="cal-legend-item">
+    <span class="cal-legend-dot" style="background:linear-gradient(135deg,#E74856,#0078D4,#0D7E3F); border:none"></span> Outlook category color
+  </span>
+  <span style="margin-left:auto; font-size:11px">Click an event to edit</span>
 </div>
-{% endif %}
+{% endif %}{# end enabled check #}
 
 
-<!-- Day detail modal -->
+<!-- Day detail modal (month view) -->
 <div class="modal-overlay" id="day-modal">
   <div class="modal" style="max-width:480px">
     <div class="modal-title" id="day-modal-title">Events</div>
@@ -164,8 +346,9 @@
 
 {% block scripts %}
 <script>
-// Serialize all events from Jinja into JS so the day-modal can access them
+// Serialize events for the day-detail modal (month view)
 var CAL_EVENTS = {
+  {% if view == 'month' %}
   {% for day, items in by_day.items() %}
   {{ day }}: [
     {% for item in items %}
@@ -180,10 +363,12 @@ var CAL_EVENTS = {
       calendar:     {{ item.calendar | tojson }},
       student:      {{ (item.student or '') | tojson }},
       isAllDay:     {{ item.is_all_day | tojson }},
+      color:        {{ (item.color or '') | tojson }},
     },
     {% endfor %}
   ],
   {% endfor %}
+  {% endif %}
 };
 
 var _currentEntryId = null;
@@ -191,15 +376,14 @@ var _currentEntryId = null;
 function openDayModal(day) {
   var items = CAL_EVENTS[day] || [];
   if (!items.length) return;
-
-  var monthName = {{ month_name_str | tojson }};
+  var monthName = {{ (month_name_str if view == 'month' else '') | tojson }};
   document.getElementById('day-modal-title').textContent = monthName + ' ' + day;
-
   var html = '';
   items.forEach(function(item) {
-    var cls = item.isAllDay ? 'day-event-allday' : (item.student ? 'day-event-matched' : '');
+    var accent = item.color || (item.isAllDay ? '#D97706' : (item.student ? '#2563EB' : '#94A3B8'));
     html +=
-      '<div class="day-event ' + cls + '" onclick="openEditFromDay(' + JSON.stringify(item).replace(/"/g,"&quot;") + ')">' +
+      '<div class="day-event" style="border-left-color:' + accent + '" ' +
+           'onclick="openEditFromDay(' + JSON.stringify(item).replace(/"/g,'&quot;') + ')">' +
         '<div class="day-event-time">' + item.startDisplay + ' – ' + item.endDisplay + '</div>' +
         '<div class="day-event-title">' + escHtml(item.subject) + '</div>' +
         (item.student ? '<div class="day-event-student">' + escHtml(item.student) + '</div>' : '') +
@@ -242,11 +426,10 @@ function saveCalEdit() {
   var end     = document.getElementById('ec-end').value;
 
   if (!subject || !date || !start || !end) {
-    errEl.textContent    = 'All fields are required.';
-    errEl.style.display  = 'block';
+    errEl.textContent   = 'All fields are required.';
+    errEl.style.display = 'block';
     return;
   }
-
   btn.disabled    = true;
   btn.textContent = 'Saving…';
   errEl.style.display = 'none';

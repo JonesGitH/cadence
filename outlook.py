@@ -25,6 +25,37 @@ log = logging.getLogger(__name__)
 
 GRAPH = 'https://graph.microsoft.com/v1.0'
 
+# Outlook category preset → CSS hex color (matches Outlook's colour palette)
+# Graph API returns preset0=Red, preset1=Orange, ... preset24=DarkCranberry.
+# The previous mapping started at preset1, causing every color to be shifted.
+_PRESET_COLORS: dict[str, str] = {
+    'preset0':  '#E74856',  # red
+    'preset1':  '#FF8C00',  # orange
+    'preset2':  '#F7630C',  # peach
+    'preset3':  '#EAA300',  # yellow
+    'preset4':  '#107C10',  # green
+    'preset5':  '#038387',  # teal
+    'preset6':  '#8DB726',  # olive
+    'preset7':  '#0078D4',  # blue
+    'preset8':  '#7719AA',  # purple
+    'preset9':  '#C30052',  # cranberry
+    'preset10': '#69797E',  # steel
+    'preset11': '#4A5568',  # dark steel
+    'preset12': '#767676',  # gray
+    'preset13': '#393939',  # dark gray
+    'preset14': '#1C1C1C',  # black
+    'preset15': '#A52D30',  # dark red
+    'preset16': '#7D3600',  # dark orange
+    'preset17': '#5D4037',  # dark brown
+    'preset18': '#937B07',  # dark yellow
+    'preset19': '#215732',  # dark green
+    'preset20': '#006A6A',  # dark teal
+    'preset21': '#3D451B',  # dark olive
+    'preset22': '#003A75',  # dark blue
+    'preset23': '#4B0082',  # dark purple
+    'preset24': '#750B1C',  # dark cranberry
+}
+
 # ── HTTP tunables ─────────────────────────────────────────────────────────────
 _TIMEOUT      = 15   # seconds per individual request
 _MAX_RETRIES  = 3
@@ -151,13 +182,53 @@ def _invalidate_calendar_cache() -> None:
         _cal_map_cache['expires'] = 0.0
 
 
+# ── Master category colour cache ──────────────────────────────────────────────
+
+_cat_cache: dict[str, str] = {}   # category display_name → hex colour
+_cat_lock  = threading.Lock()
+_cat_ready = False
+
+
+def get_master_categories() -> dict[str, str]:
+    """Return {category_name: hex_colour} from the user's Outlook master list.
+
+    Fetched once per process lifetime and cached.  Returns {} gracefully if
+    the Graph call fails (e.g. not connected).
+    """
+    global _cat_ready
+    with _cat_lock:
+        if _cat_ready:
+            return dict(_cat_cache)
+    try:
+        r    = _req('GET', f'{GRAPH}/me/outlook/masterCategories', headers=_headers())
+        cats = {
+            c['displayName']: _PRESET_COLORS[c['color']]
+            for c in r.json().get('value', [])
+            if c.get('displayName') and c.get('color') in _PRESET_COLORS
+        }
+    except Exception:
+        cats = {}
+    with _cat_lock:
+        _cat_cache.clear()
+        _cat_cache.update(cats)
+        _cat_ready = True
+    return dict(_cat_cache)
+
+
+def _invalidate_category_cache() -> None:
+    global _cat_ready
+    with _cat_lock:
+        _cat_cache.clear()
+        _cat_ready = False
+
+
 # ── Core event fetcher ────────────────────────────────────────────────────────
 
 def _fetch_events(calendar_id: str, start_iso: str, end_iso: str) -> list[dict]:
     url    = (
         f'{GRAPH}/me/calendars/{calendar_id}/calendarView'
         f'?startDateTime={start_iso}&endDateTime={end_iso}'
-        f'&$select=id,subject,start,end,isAllDay&$top=100'
+        f'&$select=id,subject,start,end,isAllDay,categories&$top=100'
     )
     events: list[dict] = []
     while url:
@@ -266,12 +337,19 @@ def get_today_items(calendars: list[tuple[str, str]]) -> list[dict]:
     return items
 
 
-def get_all_calendar_items(month: int, year: int, calendars: list[tuple[str, str]]) -> list[dict]:
-    start, end = _iso_range(month, year)
+def get_calendar_items_range(
+    start_iso: str,
+    end_iso:   str,
+    calendars: list[tuple[str, str]],
+) -> list[dict]:
+    """Fetch display-ready calendar items for any ISO date-time range."""
+    cat_colors = get_master_categories()
 
     def transform(ev, name):
-        s = _parse_dt(ev['start']['dateTime'])
-        e = _parse_dt(ev['end']['dateTime'])
+        s     = _parse_dt(ev['start']['dateTime'])
+        e     = _parse_dt(ev['end']['dateTime'])
+        cats  = ev.get('categories') or []
+        color = cat_colors.get(cats[0], '') if cats else ''
         return {
             'entry_id':   ev['id'],
             'date':       s.strftime('%Y-%m-%d'),
@@ -283,14 +361,20 @@ def get_all_calendar_items(month: int, year: int, calendars: list[tuple[str, str
             'subject':    ev.get('subject') or '',
             'calendar':   name,
             'is_all_day': bool(ev.get('isAllDay')),
+            'color':      color,
         }
 
     try:
-        items = _scan_calendars(calendars, start, end, transform)
+        items = _scan_calendars(calendars, start_iso, end_iso, transform)
     except RuntimeError:
         raise
     items.sort(key=lambda x: (x['date'], x['start_24']))
     return items
+
+
+def get_all_calendar_items(month: int, year: int, calendars: list[tuple[str, str]]) -> list[dict]:
+    start, end = _iso_range(month, year)
+    return get_calendar_items_range(start, end, calendars)
 
 
 def get_sessions(
