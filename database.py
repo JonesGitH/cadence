@@ -144,6 +144,8 @@ def init_db():
         ('parent2_city',    'TEXT'),
         ('parent2_state',   'TEXT'),
         ('parent2_zip',     'TEXT'),
+        ('parent2_phone',   'TEXT'),
+        ('parent2_email',   'TEXT'),
         ('bill_to_parent',       "TEXT DEFAULT '1'"),
         ('bill_to_custom_name',  'TEXT'),
         ('bill_to_custom_addr',  'TEXT'),

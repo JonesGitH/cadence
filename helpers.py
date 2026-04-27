@@ -88,6 +88,14 @@ def _match_initials(subject, initials_map):
     return None
 
 
+def _parse_rate(raw: str):
+    """Return float, None (blank), or raise ValueError on non-numeric input."""
+    s = raw.strip()
+    if not s:
+        return None
+    return float(s)
+
+
 def _parse_student_form():
     services = request.form.getlist('services')
     return {
@@ -114,6 +122,8 @@ def _parse_student_form():
         'parent2_city':    request.form.get('parent2_city',    '').strip(),
         'parent2_state':   request.form.get('parent2_state',   '').strip(),
         'parent2_zip':     request.form.get('parent2_zip',     '').strip(),
+        'parent2_phone':   request.form.get('parent2_phone',   '').strip(),
+        'parent2_email':   request.form.get('parent2_email',   '').strip(),
         'bill_to_parent':       request.form.get('bill_to_parent',       '1').strip() or '1',
         'bill_to_custom_name':  request.form.get('bill_to_custom_name',  '').strip(),
         'bill_to_custom_addr':  request.form.get('bill_to_custom_addr',  '').strip(),
@@ -123,8 +133,5 @@ def _parse_student_form():
         'intake_complete': 1 if request.form.get('intake_complete') else 0,
         'roi_complete':    1 if request.form.get('roi_complete')    else 0,
         'notes':           request.form.get('notes', '').strip(),
-        'hourly_rate':     (
-            float(request.form.get('hourly_rate'))
-            if request.form.get('hourly_rate', '').strip() else None
-        ),
+        'hourly_rate':     _parse_rate(request.form.get('hourly_rate', '')),
     }

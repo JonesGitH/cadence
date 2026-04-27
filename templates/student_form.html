@@ -58,7 +58,9 @@
   <!-- Parent / Guardian -->
   <div class="card">
     <div class="card-title">Parent / Guardian</div>
-    <div class="form-grid">
+
+    <!-- Two-column contact info: Parent 1 | Parent 2 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px">
       <div class="form-group">
         <label for="parent1_name">Parent 1 Name</label>
         <input type="text" id="parent1_name" name="parent1_name"
@@ -68,6 +70,27 @@
         <label for="parent2_name">Parent 2 Name</label>
         <input type="text" id="parent2_name" name="parent2_name"
                value="{{ student.parent2_name if student else '' }}" placeholder="John Jones">
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone"
+               value="{{ student.phone if student else '' }}" placeholder="(555) 555-5555">
+      </div>
+      <div class="form-group">
+        <label for="parent2_phone">Phone Number</label>
+        <input type="tel" id="parent2_phone" name="parent2_phone"
+               value="{{ student.parent2_phone if student else '' }}" placeholder="(555) 555-5555">
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email"
+               value="{{ student.email if student else '' }}" placeholder="jane@example.com">
+        <span class="form-hint">Used for sending invoices via Outlook</span>
+      </div>
+      <div class="form-group">
+        <label for="parent2_email">Email Address</label>
+        <input type="email" id="parent2_email" name="parent2_email"
+               value="{{ student.parent2_email if student else '' }}" placeholder="john@example.com">
         <label class="check-item" style="margin-top:8px;font-size:13px;font-weight:normal">
           <input type="checkbox" id="parent2_diff_addr"
                  {% if student and (student.parent2_address or student.parent2_city or student.parent2_state or student.parent2_zip) %}checked{% endif %}
@@ -75,6 +98,10 @@
           Different address for Parent 2
         </label>
       </div>
+    </div>
+
+    <!-- Address fields -->
+    <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1">
         <label for="parent_address">Street Address <span class="form-hint" style="display:inline;margin-left:4px">(Parent 1)</span></label>
         <input type="text" id="parent_address" name="parent_address"
@@ -180,18 +207,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email"
-               value="{{ student.email if student else '' }}" placeholder="jane@example.com">
-        <span class="form-hint">Used for sending invoices via Outlook</span>
-      </div>
-      <div class="form-group">
-        <label for="phone">Phone</label>
-        <input type="tel" id="phone" name="phone"
-               value="{{ student.phone if student else '' }}" placeholder="(555) 555-5555">
       </div>
     </div>
   </div>

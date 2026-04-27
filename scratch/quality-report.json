@@ -1,0 +1,14 @@
+{
+  "workspace": "E:\\Code\\cadence",
+  "pptx": "E:\\Code\\cadence\\output\\output.pptx",
+  "checks": {
+    "output_hygiene": {
+      "output_dir": "E:\\Code\\cadence\\output",
+      "unexpected_files": []
+    }
+  },
+  "failures": [
+    "PPTX package inspection failed: unzip -Z1 E:\\Code\\cadence\\output\\output.pptx failed"
+  ],
+  "warnings": []
+}

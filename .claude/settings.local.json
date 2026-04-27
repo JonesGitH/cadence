@@ -6,7 +6,11 @@
       "Bash(python scripts/search.py \"tutoring consulting SaaS dashboard professional\" --design-system -p \"Cadence\")",
       "Bash(python -c ' *)",
       "Bash(pyinstaller *)",
-      "Bash(D:\\\\Users\\\\Alex\\\\AppData\\\\Local\\\\Programs\\\\Inno Setup 6\\\\ISCC.exe *)"
+      "Bash(D:\\\\Users\\\\Alex\\\\AppData\\\\Local\\\\Programs\\\\Inno Setup 6\\\\ISCC.exe *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(python *)"
     ]
   }
 }

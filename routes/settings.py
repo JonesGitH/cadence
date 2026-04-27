@@ -98,6 +98,8 @@ def student_import_template():
         ('parent2_city',    'City (P2)',             18, 'Parent 2 city.'),
         ('parent2_state',   'State (P2)',            8,  '2-letter state code (e.g. TX)'),
         ('parent2_zip',     'Zip (P2)',              10, 'Parent 2 zip.'),
+        ('parent2_phone',   'Phone (P2)',            16, 'Parent 2 contact phone number.'),
+        ('parent2_email',   'Email (P2)',            26, 'Parent 2 email address.'),
         ('intake_complete', 'Intake Complete',      16, 'YES or NO'),
         ('roi_complete',    'ROI Complete',         14, 'YES or NO'),
         ('hourly_rate',     'Per-Session Rate',     16, 'Leave blank to use default rate from Settings.'),
@@ -164,6 +166,7 @@ def student_import_template():
         'parent2_name': 'John Smith', 'parent_address': '123 Oak St',
         'parent_city': 'Austin', 'parent_state': 'TX', 'parent_zip': '78701',
         'parent2_address': '', 'parent2_city': '', 'parent2_state': '', 'parent2_zip': '',
+        'parent2_phone': '', 'parent2_email': '',
         'intake_complete': 'YES', 'roi_complete': 'NO',
         'hourly_rate': '', 'notes': 'Works best with visual aids.',
     }
@@ -224,8 +227,8 @@ def import_students():
         'diagnosis', 'services', 'services_other', 'start_date', 'end_date',
         'test_date', 'parent1_name', 'parent2_name', 'parent_address',
         'parent_city', 'parent_state', 'parent_zip', 'parent2_address',
-        'parent2_city', 'parent2_state', 'parent2_zip', 'intake_complete',
-        'roi_complete', 'hourly_rate', 'notes',
+        'parent2_city', 'parent2_state', 'parent2_zip', 'parent2_phone',
+        'parent2_email', 'intake_complete', 'roi_complete', 'hourly_rate', 'notes',
     ]
 
     header_map     = {}
@@ -317,9 +320,9 @@ def import_students():
                      services, services_other, start_date, end_date, test_date,
                      parent1_name, parent2_name, parent_address, parent_city,
                      parent_state, parent_zip, parent2_address, parent2_city,
-                     parent2_state, parent2_zip, intake_complete, roi_complete,
-                     notes, hourly_rate)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                     parent2_state, parent2_zip, parent2_phone, parent2_email,
+                     intake_complete, roi_complete, notes, hourly_rate)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ''', (name, initials,
                   _cell(row, 'email'),      _cell(row, 'phone'),
                   _cell(row, 'school'),     _cell(row, 'grade'),
@@ -332,6 +335,7 @@ def import_students():
                   _cell(row, 'parent_state'),    _cell(row, 'parent_zip'),
                   _cell(row, 'parent2_address'), _cell(row, 'parent2_city'),
                   _cell(row, 'parent2_state'),   _cell(row, 'parent2_zip'),
+                  _cell(row, 'parent2_phone'),   _cell(row, 'parent2_email'),
                   intake, roi, _cell(row, 'notes'), hourly_rate))
             existing.add(name.strip().lower())
             added += 1
@@ -391,11 +395,12 @@ def save_settings():
 
 @app.route('/settings/calendars/save', methods=['POST'])
 def save_calendars():
-    conn     = get_db()
-    all_cals = conn.execute('SELECT id FROM calendars').fetchall()
+    default_cal = request.form.get('default_cal')
+    conn        = get_db()
+    all_cals    = conn.execute('SELECT id FROM calendars').fetchall()
     for cal in all_cals:
-        enabled    = 1 if request.form.get(f'enabled_{cal["id"]}')  else 0
-        is_default = 1 if request.form.get(f'default_{cal["id"]}')  else 0
+        enabled    = 1 if request.form.get(f'enabled_{cal["id"]}') else 0
+        is_default = 1 if str(cal['id']) == default_cal else 0
         conn.execute('UPDATE calendars SET enabled=?, is_default=? WHERE id=?',
                      (enabled, is_default, cal['id']))
     conn.commit()

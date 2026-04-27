@@ -3,7 +3,7 @@ import logging
 from flask import render_template, request, redirect, url_for, flash
 from app import app
 from database import get_db, get_all_clients, get_client
-from helpers import _enrich_student, _parse_services, _calculate_age, _parse_student_form, SERVICES, GRADES
+from helpers import _enrich_student, _parse_services, _calculate_age, _parse_student_form, _parse_rate, SERVICES, GRADES
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,11 @@ def add_client():
     if request.method == 'GET':
         return render_template('student_form.html', student=None, services=SERVICES, grades=GRADES)
 
-    d = _parse_student_form()
+    try:
+        d = _parse_student_form()
+    except ValueError:
+        flash('Per-session rate must be a number.', 'error')
+        return render_template('student_form.html', student=None, services=SERVICES, grades=GRADES)
     if not d['name'] or not d['initials']:
         flash('Name and initials are required.', 'error')
         return render_template('student_form.html', student=d, services=SERVICES, grades=GRADES)
@@ -33,11 +37,12 @@ def add_client():
              services, services_other, start_date, end_date, test_date,
              parent1_name, parent2_name, parent_address, parent_city,
              parent_state, parent_zip, parent2_address, parent2_city,
-             parent2_state, parent2_zip, bill_to_parent,
+             parent2_state, parent2_zip, parent2_phone, parent2_email,
+             bill_to_parent,
              bill_to_custom_name, bill_to_custom_addr, bill_to_custom_city,
              bill_to_custom_state, bill_to_custom_zip,
              intake_complete, roi_complete, notes, hourly_rate)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ''', (d['name'], d['initials'], d['email'], d['phone'],
           d['school'], d['grade'], d['birthday'], d['diagnosis'],
           d['services'], d['services_other'],
@@ -45,6 +50,7 @@ def add_client():
           d['parent1_name'], d['parent2_name'], d['parent_address'],
           d['parent_city'], d['parent_state'], d['parent_zip'],
           d['parent2_address'], d['parent2_city'], d['parent2_state'], d['parent2_zip'],
+          d['parent2_phone'], d['parent2_email'],
           d['bill_to_parent'],
           d['bill_to_custom_name'], d['bill_to_custom_addr'], d['bill_to_custom_city'],
           d['bill_to_custom_state'], d['bill_to_custom_zip'],
@@ -65,7 +71,12 @@ def edit_client(client_id):
             return redirect(url_for('clients'))
         return render_template('student_form.html', student=student, services=SERVICES, grades=GRADES)
 
-    d = _parse_student_form()
+    try:
+        d = _parse_student_form()
+    except ValueError:
+        student = _enrich_student(get_client(client_id))
+        flash('Per-session rate must be a number.', 'error')
+        return render_template('student_form.html', student=student, services=SERVICES, grades=GRADES)
     if not d['name'] or not d['initials']:
         flash('Name and initials are required.', 'error')
         d['id'] = client_id
@@ -81,6 +92,7 @@ def edit_client(client_id):
             test_date=?, parent1_name=?, parent2_name=?, parent_address=?,
             parent_city=?, parent_state=?, parent_zip=?,
             parent2_address=?, parent2_city=?, parent2_state=?, parent2_zip=?,
+            parent2_phone=?, parent2_email=?,
             bill_to_parent=?,
             bill_to_custom_name=?, bill_to_custom_addr=?, bill_to_custom_city=?,
             bill_to_custom_state=?, bill_to_custom_zip=?,
@@ -93,6 +105,7 @@ def edit_client(client_id):
           d['parent1_name'], d['parent2_name'], d['parent_address'],
           d['parent_city'], d['parent_state'], d['parent_zip'],
           d['parent2_address'], d['parent2_city'], d['parent2_state'], d['parent2_zip'],
+          d['parent2_phone'], d['parent2_email'],
           d['bill_to_parent'],
           d['bill_to_custom_name'], d['bill_to_custom_addr'], d['bill_to_custom_city'],
           d['bill_to_custom_state'], d['bill_to_custom_zip'],
@@ -128,9 +141,20 @@ def restore_client(client_id):
 
 @app.route('/clients/<int:client_id>/delete', methods=['POST'])
 def delete_client(client_id):
-    conn = get_db()
+    conn   = get_db()
     client = conn.execute('SELECT name FROM clients WHERE id=?', (client_id,)).fetchone()
     if client:
+        invoice_count = conn.execute(
+            'SELECT COUNT(*) FROM invoices WHERE client_id=?', (client_id,)
+        ).fetchone()[0]
+        if invoice_count > 0:
+            conn.close()
+            flash(
+                f'"{client["name"]}" has {invoice_count} invoice(s) and cannot be deleted. '
+                'Archive them instead to preserve billing history.',
+                'error'
+            )
+            return redirect(url_for('clients'))
         conn.execute('DELETE FROM clients WHERE id=?', (client_id,))
         conn.commit()
         log.info('Student deleted: %s (id=%d)', client['name'], client_id)

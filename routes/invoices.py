@@ -116,9 +116,15 @@ def generate_invoice():
 
     global_rate     = float(cfg.get('hourly_rate', '0'))
     rate            = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
-    total_hours     = round(sum(s['duration_hours'] for s in sessions), 2)
-    late_fee_amount = round(float(late_fee['amount']), 2) if late_fee else 0
-    credit_amount   = round(float(credit['amount']),   2) if credit   else 0
+    total_hours = round(sum(s['duration_hours'] for s in sessions), 2)
+    try:
+        late_fee_amount = round(float(late_fee['amount']), 2) if late_fee else 0
+    except (TypeError, ValueError, KeyError):
+        return jsonify({'error': 'Late fee amount is invalid.'}), 400
+    try:
+        credit_amount = round(float(credit['amount']), 2) if credit else 0
+    except (TypeError, ValueError, KeyError):
+        return jsonify({'error': 'Credit amount is invalid.'}), 400
     total_amount    = round(total_hours * rate + late_fee_amount - credit_amount, 2)
     inv_number      = next_invoice_number(conn)
     now             = datetime.now()
@@ -333,6 +339,25 @@ def open_folder(invoice_id):
         return jsonify({'error': 'Folder not found.'}), 404
 
 
+def _resolve_bill_to(client) -> dict:
+    """Return {name, email} for the correct bill-to party based on client settings."""
+    bill_to = client['bill_to_parent'] or '1'
+    if bill_to == '2' and client['parent2_name']:
+        return {
+            'name':  client['parent2_name'] or '',
+            'email': client['parent2_email'] or '',
+        }
+    if bill_to == 'custom':
+        return {
+            'name':  client['bill_to_custom_name'] or _parent_bill_name(dict(client)),
+            'email': client['email'] or '',
+        }
+    return {
+        'name':  _parent_bill_name(dict(client)),
+        'email': client['email'] or '',
+    }
+
+
 @app.route('/invoices/<int:invoice_id>/send-email', methods=['POST'])
 def send_email(invoice_id):
     inv, _ = get_invoice(invoice_id)
@@ -341,15 +366,17 @@ def send_email(invoice_id):
     if not inv['pdf_path']:
         return jsonify({'error': 'PDF not found. Open the invoice to regenerate it.'}), 404
 
-    client = get_client(inv['client_id'])
-    if not client or not client['email']:
-        return jsonify({'error': 'This student has no email address. Add one in Students.'}), 400
+    client   = get_client(inv['client_id'])
+    bill_to  = _resolve_bill_to(client)
+    to_email = bill_to['email']
+    if not client or not to_email:
+        return jsonify({'error': 'No email address on file for the billing contact. Add one in Students.'}), 400
 
     cfg    = get_settings_batch(('business_name', 'business_title', 'business_phone', 'business_email'))
     period = month_name(inv['month'], inv['year'])
     subject = f"Invoice {inv['invoice_number']} \u2013 {period}"
     body = (
-        f"Dear {_parent_bill_name(dict(client))},\n\n"
+        f"Dear {bill_to['name']},\n\n"
         f"Please find attached your invoice for {period}.\n\n"
         f"Invoice #:  {inv['invoice_number']}\n"
         f"Student:    {client['name']}\n"
@@ -364,8 +391,8 @@ def send_email(invoice_id):
     )
 
     try:
-        send_invoice_email(client['email'], subject, body, inv['pdf_path'])
-        log.info('Invoice %s emailed to %s', inv['invoice_number'], client['email'])
+        send_invoice_email(to_email, subject, body, inv['pdf_path'])
+        log.info('Invoice %s emailed to %s', inv['invoice_number'], to_email)
         return jsonify({'success': True})
     except Exception as e:
         log.error('Email send failed for invoice %s: %s', inv['invoice_number'], e)
