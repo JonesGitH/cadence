@@ -66,8 +66,14 @@ def fetch_sessions():
     except RuntimeError as e:
         return jsonify({'error': str(e)}), 500
 
-    global_rate = float(get_setting('hourly_rate', '0'))
-    rate = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
+    try:
+        global_rate = float(get_setting('hourly_rate', '0') or '0')
+    except (ValueError, TypeError):
+        global_rate = 0.0
+    try:
+        rate = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
+    except (ValueError, TypeError):
+        rate = global_rate
     for s in sessions:
         s['rate']       = rate
         s['line_total'] = round(s['duration_hours'] * rate, 2)
@@ -90,6 +96,12 @@ def generate_invoice():
 
     if not sessions:
         return jsonify({'error': 'No sessions selected.'}), 400
+
+    for s in sessions:
+        try:
+            s['duration_hours'] = float(s['duration_hours'])
+        except (TypeError, ValueError, KeyError):
+            return jsonify({'error': f'Invalid session duration: {s.get("duration_hours")!r}'}), 400
 
     client = get_client(client_id)
     if not client:
@@ -114,8 +126,14 @@ def generate_invoice():
                                'business_email', 'business_phone', 'business_address',
                                'business_city', 'business_state', 'business_zip', 'venmo_handle'))
 
-    global_rate     = float(cfg.get('hourly_rate', '0'))
-    rate            = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
+    try:
+        global_rate = float(cfg.get('hourly_rate', '0') or '0')
+    except (ValueError, TypeError):
+        global_rate = 0.0
+    try:
+        rate = float(client['hourly_rate']) if client['hourly_rate'] else global_rate
+    except (ValueError, TypeError):
+        rate = global_rate
     total_hours = round(sum(s['duration_hours'] for s in sessions), 2)
     try:
         late_fee_amount = round(float(late_fee['amount']), 2) if late_fee else 0
@@ -246,9 +264,10 @@ def invoice_detail(invoice_id):
         flash('Invoice not found.', 'error')
         return redirect(url_for('invoices'))
     from helpers import _enrich_student
-    client = _enrich_student(get_client(inv['client_id']))
+    client  = _enrich_student(get_client(inv['client_id']))
+    bill_to = _resolve_bill_to(client) if client else None
     return render_template('invoice_detail.html', inv=inv, lines=lines,
-                           client=client, month_name=month_name)
+                           client=client, bill_to=bill_to, month_name=month_name)
 
 
 @app.route('/invoices/<int:invoice_id>/toggle-paid', methods=['POST'])
@@ -340,21 +359,33 @@ def open_folder(invoice_id):
 
 
 def _resolve_bill_to(client) -> dict:
-    """Return {name, email} for the correct bill-to party based on client settings."""
+    """Return {name, email, address, city, state, zip} for the bill-to party."""
     bill_to = client['bill_to_parent'] or '1'
     if bill_to == '2' and client['parent2_name']:
         return {
-            'name':  client['parent2_name'] or '',
-            'email': client['parent2_email'] or '',
+            'name':    client['parent2_name']    or '',
+            'email':   client['parent2_email']   or '',
+            'address': client['parent2_address'] or '',
+            'city':    client['parent2_city']    or '',
+            'state':   client['parent2_state']   or '',
+            'zip':     client['parent2_zip']     or '',
         }
     if bill_to == 'custom':
         return {
-            'name':  client['bill_to_custom_name'] or _parent_bill_name(dict(client)),
-            'email': client['email'] or '',
+            'name':    client['bill_to_custom_name']  or _parent_bill_name(dict(client)),
+            'email':   client['email']                or '',
+            'address': client['bill_to_custom_addr']  or '',
+            'city':    client['bill_to_custom_city']  or '',
+            'state':   client['bill_to_custom_state'] or '',
+            'zip':     client['bill_to_custom_zip']   or '',
         }
     return {
-        'name':  _parent_bill_name(dict(client)),
-        'email': client['email'] or '',
+        'name':    _parent_bill_name(dict(client)),
+        'email':   client['email']          or '',
+        'address': client['parent_address'] or '',
+        'city':    client['parent_city']    or '',
+        'state':   client['parent_state']   or '',
+        'zip':     client['parent_zip']     or '',
     }
 
 

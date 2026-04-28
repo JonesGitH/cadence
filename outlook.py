@@ -291,12 +291,15 @@ def _scan_calendars(
     if not targets:
         return []
 
+    fetch_errors: list[Exception] = []
+
     def _pull(name: str, cal_id: str) -> list[dict]:
         out: list[dict] = []
         try:
             events = _fetch_events(cal_id, start_iso, end_iso)
         except RuntimeError as exc:
             log.error('Failed to fetch events for calendar "%s": %s', name, exc)
+            fetch_errors.append(exc)
             return out
         for ev in events:
             try:
@@ -311,6 +314,9 @@ def _scan_calendars(
     with ThreadPoolExecutor(max_workers=min(8, len(targets))) as pool:
         for result in pool.map(lambda t: _pull(*t), targets):
             items.extend(result)
+
+    if not items and fetch_errors:
+        raise fetch_errors[0]
     return items
 
 
