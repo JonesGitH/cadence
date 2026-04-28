@@ -98,8 +98,14 @@ def student_import_template():
         ('parent2_city',    'City (P2)',             18, 'Parent 2 city.'),
         ('parent2_state',   'State (P2)',            8,  '2-letter state code (e.g. TX)'),
         ('parent2_zip',     'Zip (P2)',              10, 'Parent 2 zip.'),
-        ('parent2_phone',   'Phone (P2)',            16, 'Parent 2 contact phone number.'),
-        ('parent2_email',   'Email (P2)',            26, 'Parent 2 email address.'),
+        ('parent2_phone',        'Phone (P2)',            16, 'Parent 2 contact phone number.'),
+        ('parent2_email',        'Email (P2)',            26, 'Parent 2 email address.'),
+        ('bill_to_parent',       'Bill To',              10, 'Who receives the invoice: 1 (Parent 1), 2 (Parent 2), or custom. Defaults to 1.'),
+        ('bill_to_custom_name',  'Custom Bill-To Name',  24, 'Full name when Bill To = custom.'),
+        ('bill_to_custom_addr',  'Custom Bill-To Street',26, 'Street address when Bill To = custom.'),
+        ('bill_to_custom_city',  'Custom Bill-To City',  18, 'City when Bill To = custom.'),
+        ('bill_to_custom_state', 'Custom Bill-To State',  8, '2-letter state when Bill To = custom.'),
+        ('bill_to_custom_zip',   'Custom Bill-To Zip',   10, 'Zip when Bill To = custom.'),
         ('intake_complete', 'Intake Complete',      16, 'YES or NO'),
         ('roi_complete',    'ROI Complete',         14, 'YES or NO'),
         ('hourly_rate',     'Per-Session Rate',     16, 'Leave blank to use default rate from Settings.'),
@@ -138,9 +144,10 @@ def student_import_template():
 
     GRADES_LIST = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th',
                    '8th', '9th', '10th', '11th', '12th', 'College', 'Other']
-    grade_col  = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'grade')
-    intake_col = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'intake_complete')
-    roi_col    = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'roi_complete')
+    grade_col    = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'grade')
+    intake_col   = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'intake_complete')
+    roi_col      = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'roi_complete')
+    bill_to_col  = next(i for i, (k, *_) in enumerate(COLS, 1) if k == 'bill_to_parent')
 
     dv_grade = DataValidation(type='list', formula1=f'"{",".join(GRADES_LIST)}"',
                                showDropDown=False, showErrorMessage=True,
@@ -156,6 +163,12 @@ def student_import_template():
         dv_yn.sqref = f'{get_column_letter(c)}3:{get_column_letter(c)}1000'
         ws.add_data_validation(dv_yn)
 
+    dv_bill = DataValidation(type='list', formula1='"1,2,custom"',
+                              showDropDown=False, showErrorMessage=True,
+                              errorTitle='Invalid value', error='Enter 1, 2, or custom.')
+    dv_bill.sqref = f'{get_column_letter(bill_to_col)}3:{get_column_letter(bill_to_col)}1000'
+    ws.add_data_validation(dv_bill)
+
     SAMPLE = {
         'name': 'Jane Smith', 'initials': 'JS', 'email': 'parent@example.com',
         'phone': '555-123-4567', 'school': 'Lincoln Elementary', 'grade': '4th',
@@ -167,6 +180,8 @@ def student_import_template():
         'parent_city': 'Austin', 'parent_state': 'TX', 'parent_zip': '78701',
         'parent2_address': '', 'parent2_city': '', 'parent2_state': '', 'parent2_zip': '',
         'parent2_phone': '', 'parent2_email': '',
+        'bill_to_parent': '1', 'bill_to_custom_name': '', 'bill_to_custom_addr': '',
+        'bill_to_custom_city': '', 'bill_to_custom_state': '', 'bill_to_custom_zip': '',
         'intake_complete': 'YES', 'roi_complete': 'NO',
         'hourly_rate': '', 'notes': 'Works best with visual aids.',
     }
@@ -228,7 +243,9 @@ def import_students():
         'test_date', 'parent1_name', 'parent2_name', 'parent_address',
         'parent_city', 'parent_state', 'parent_zip', 'parent2_address',
         'parent2_city', 'parent2_state', 'parent2_zip', 'parent2_phone',
-        'parent2_email', 'intake_complete', 'roi_complete', 'hourly_rate', 'notes',
+        'parent2_email', 'bill_to_parent', 'bill_to_custom_name', 'bill_to_custom_addr',
+        'bill_to_custom_city', 'bill_to_custom_state', 'bill_to_custom_zip',
+        'intake_complete', 'roi_complete', 'hourly_rate', 'notes',
     ]
 
     header_map     = {}
@@ -313,6 +330,9 @@ def import_students():
         except ValueError:
             hourly_rate = None
 
+        raw_bill_to = _cell(row, 'bill_to_parent').lower()
+        bill_to_parent = raw_bill_to if raw_bill_to in ('1', '2', 'custom') else '1'
+
         try:
             conn.execute('''
                 INSERT INTO clients
@@ -321,8 +341,10 @@ def import_students():
                      parent1_name, parent2_name, parent_address, parent_city,
                      parent_state, parent_zip, parent2_address, parent2_city,
                      parent2_state, parent2_zip, parent2_phone, parent2_email,
+                     bill_to_parent, bill_to_custom_name, bill_to_custom_addr,
+                     bill_to_custom_city, bill_to_custom_state, bill_to_custom_zip,
                      intake_complete, roi_complete, notes, hourly_rate)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ''', (name, initials,
                   _cell(row, 'email'),      _cell(row, 'phone'),
                   _cell(row, 'school'),     _cell(row, 'grade'),
@@ -336,6 +358,10 @@ def import_students():
                   _cell(row, 'parent2_address'), _cell(row, 'parent2_city'),
                   _cell(row, 'parent2_state'),   _cell(row, 'parent2_zip'),
                   _cell(row, 'parent2_phone'),   _cell(row, 'parent2_email'),
+                  bill_to_parent,
+                  _cell(row, 'bill_to_custom_name'), _cell(row, 'bill_to_custom_addr'),
+                  _cell(row, 'bill_to_custom_city'),  _cell(row, 'bill_to_custom_state'),
+                  _cell(row, 'bill_to_custom_zip'),
                   intake, roi, _cell(row, 'notes'), hourly_rate))
             existing.add(name.strip().lower())
             added += 1

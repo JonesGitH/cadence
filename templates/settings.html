@@ -152,7 +152,7 @@
   </div>
   {% endif %}
 
-  <form method="POST" action="{{ url_for('save_graph_settings') }}">
+  <form method="POST" action="{{ url_for('save_graph_settings') }}" id="save-graph-form">
     <div class="form-grid" style="max-width:680px; margin-bottom:16px">
       <div class="form-group">
         <label for="graph_client_id">Azure App Client ID</label>
@@ -179,17 +179,17 @@
         <span class="form-hint">Used to display calendar event times correctly.</span>
       </div>
     </div>
-    <div class="flex gap-2">
-      <button type="submit" class="btn btn-secondary">Save</button>
-      {% if not graph_connected %}
-      <button type="button" class="btn btn-primary" id="graph-connect-btn">Connect Microsoft 365</button>
-      {% else %}
-      <form method="POST" action="{{ url_for('graph_disconnect') }}" style="display:inline">
-        <button type="submit" class="btn btn-ghost-danger">Disconnect</button>
-      </form>
-      {% endif %}
-    </div>
   </form>
+  <div class="flex gap-2">
+    <button type="submit" form="save-graph-form" class="btn btn-secondary">Save</button>
+    {% if not graph_connected %}
+    <button type="button" class="btn btn-primary" id="graph-connect-btn">Connect Microsoft 365</button>
+    {% else %}
+    <form method="POST" action="{{ url_for('graph_disconnect') }}" style="display:inline; margin:0">
+      <button type="submit" class="btn btn-ghost-danger">Disconnect</button>
+    </form>
+    {% endif %}
+  </div>
 
   <!-- Device flow auth modal -->
   <div class="modal-overlay" id="graph-auth-modal">

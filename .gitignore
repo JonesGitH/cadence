@@ -15,9 +15,17 @@ cadence.db-shm
 config.txt
 
 C_/
+C:\*/
 
 .vscode/
 .idea/
 *.swp
 .DS_Store
 Thumbs.db
+
+node_modules/
+scratch/
+output/
+package.json
+src/cadence-marketing.mjs
+C:\\invoice/
