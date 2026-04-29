@@ -316,10 +316,11 @@ def import_students():
             skipped += 1
             continue
 
-        raw_svc   = _cell(row, 'services')
-        svc_list  = [s.strip() for s in raw_svc.replace(';', ',').split(',') if s.strip()]
-        svc_list  = [s for s in svc_list if s in VALID_SERVICES]
-        svc_json  = json.dumps(svc_list) if svc_list else json.dumps([])
+        raw_svc      = _cell(row, 'services')
+        svc_all      = [s.strip() for s in raw_svc.replace(';', ',').split(',') if s.strip()]
+        invalid_svcs = [s for s in svc_all if s not in VALID_SERVICES]
+        svc_list     = [s for s in svc_all if s in VALID_SERVICES]
+        svc_json     = json.dumps(svc_list) if svc_list else json.dumps([])
 
         intake = 1 if _cell(row, 'intake_complete').upper() == 'YES' else 0
         roi    = 1 if _cell(row, 'roi_complete').upper()    == 'YES' else 0
@@ -365,6 +366,10 @@ def import_students():
                   intake, roi, _cell(row, 'notes'), hourly_rate))
             existing.add(name.strip().lower())
             added += 1
+            if invalid_svcs:
+                error_msgs.append(
+                    f'Row {row_idx} ({name}): unknown service(s) ignored — {", ".join(invalid_svcs)}'
+                )
         except Exception as e:
             errors += 1
             error_msgs.append(f'Row {row_idx} ({name}): {e}')
@@ -421,17 +426,25 @@ def save_settings():
 
 @app.route('/settings/calendars/save', methods=['POST'])
 def save_calendars():
-    default_cal = request.form.get('default_cal')
-    conn        = get_db()
-    all_cals    = conn.execute('SELECT id FROM calendars').fetchall()
+    default_cal  = request.form.get('default_cal')
+    conn         = get_db()
+    all_cals     = conn.execute('SELECT id FROM calendars').fetchall()
+    enabled_ids  = []
     for cal in all_cals:
         enabled    = 1 if request.form.get(f'enabled_{cal["id"]}') else 0
         is_default = 1 if str(cal['id']) == default_cal else 0
+        if enabled:
+            enabled_ids.append(cal['id'])
         conn.execute('UPDATE calendars SET enabled=?, is_default=? WHERE id=?',
                      (enabled, is_default, cal['id']))
     conn.commit()
     conn.close()
-    flash('Calendar preferences saved.', 'success')
+    if not enabled_ids:
+        flash('No calendars are enabled — invoice session lookup will not work until at least one calendar is enabled.', 'warning')
+    elif not default_cal:
+        flash('Calendar preferences saved. Note: no default calendar is selected.', 'warning')
+    else:
+        flash('Calendar preferences saved.', 'success')
     return redirect(url_for('settings'))
 
 

@@ -77,7 +77,7 @@ def _parent_bill_name(client):
     p2 = (client.get('parent2_name') or '').strip()
     if p1 and p2:
         return f'{p1} & {p2}'
-    return p1 or p2 or client['name']
+    return p1 or p2 or client.get('name', '')
 
 
 def _match_initials(subject, initials_map):

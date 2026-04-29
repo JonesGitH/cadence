@@ -365,7 +365,7 @@ function sendEmail(invoiceId) {
     .catch(function() {
       btn.disabled = false;
       btn.innerHTML = _EMAIL_BTN_HTML;
-      Toast.show('Could not send email. Check Microsoft 365 in Settings.', 'error');
+      Toast.show('Could not reach the server. Check your connection.', 'error');
     });
 }
 

@@ -217,31 +217,7 @@ def generate_invoice():
         'zip':          cfg.get('business_zip',     ''),
         'venmo_handle': cfg.get('venmo_handle',     ''),
     }
-    _bill_to = client['bill_to_parent'] or '1'
-    if _bill_to == 'custom':
-        parent = {
-            'name':    client['bill_to_custom_name']  or '',
-            'address': client['bill_to_custom_addr']  or '',
-            'city':    client['bill_to_custom_city']  or '',
-            'state':   client['bill_to_custom_state'] or '',
-            'zip':     client['bill_to_custom_zip']   or '',
-        }
-    elif _bill_to == '2' and client['parent2_name']:
-        parent = {
-            'name':    client['parent2_name']    or '',
-            'address': client['parent2_address'] or '',
-            'city':    client['parent2_city']    or '',
-            'state':   client['parent2_state']   or '',
-            'zip':     client['parent2_zip']     or '',
-        }
-    else:
-        parent = {
-            'name':    _parent_bill_name(dict(client)),
-            'address': client['parent_address'] or '',
-            'city':    client['parent_city']    or '',
-            'state':   client['parent_state']   or '',
-            'zip':     client['parent_zip']     or '',
-        }
+    parent = _resolve_bill_to(client)
 
     try:
         pdf_path = build_pdf(invoice_dict, lines_for_pdf, business, parent,
