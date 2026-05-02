@@ -191,8 +191,7 @@ def generate_invoice():
         ''', (invoice_id, credit_amount, note))
         lines_for_pdf.append({'line_type': 'credit', 'note': note, 'line_total': credit_amount})
 
-    conn.commit()
-    log.info('Invoice %s created for client_id=%s (%s/%s) total=$%.2f',
+    log.info('Invoice %s staged for client_id=%s (%s/%s) total=$%.2f',
              inv_number, client_id, month, year, total_amount)
 
     invoice_dict = {
@@ -249,9 +248,10 @@ def generate_invoice():
         conn.execute('UPDATE invoices SET pdf_path=? WHERE id=?', (pdf_path, invoice_id))
         conn.commit()
     except Exception as e:
+        conn.rollback()
         conn.close()
         log.error('PDF generation failed for invoice %s: %s', inv_number, e)
-        return jsonify({'error': f'Invoice saved but PDF failed: {e}'}), 500
+        return jsonify({'error': f'Could not generate invoice: {e}'}), 500
 
     conn.close()
     return jsonify({'success': True, 'invoice_id': invoice_id, 'pdf_path': pdf_path})

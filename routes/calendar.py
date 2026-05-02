@@ -81,8 +81,10 @@ def calendar_view():
             year  = int(request.args.get('year',  now.year))
         except (ValueError, TypeError):
             month, year = now.month, now.year
-        if month < 1:  month, year = 12, year - 1
-        if month > 12: month, year = 1,  year + 1
+        # Normalize arbitrary month offsets (e.g. ?month=-5 or ?month=15)
+        month -= 1
+        year  += month // 12
+        month  = month % 12 + 1
 
         cal_items = []
         if enabled:

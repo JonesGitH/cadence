@@ -30,8 +30,9 @@ Cadence is a local desktop app built for Educational Therapists and other solo p
 
 - **Reads your Microsoft 365 calendar** via the Microsoft Graph API — Outlook does not need to be open
 - **Finds student sessions** by matching appointment titles against each student's initials
+- **Displays a Monday–Friday calendar** in both week and month views — weekends are hidden by default
 - **Generates professional PDF invoices** with every session listed as a line item at your configured rate
-- **Sends invoices by email** directly through your Microsoft 365 account, saved to your Sent Items
+- **Sends invoices by email** directly through your Microsoft 365 account to the correct billing parent, saved to your Sent Items
 - **Tracks payment status** and gives you a full annual income summary for tax reporting
 - **Bulk-imports students** from a pre-formatted Excel spreadsheet
 
@@ -234,6 +235,8 @@ Start entering data from **row 3** (or row 4 if you keep the sample). Only **Nam
 | **Grade** | Use the dropdown: K, 1st–12th, College, Other |
 | **Birthday** | Format: `YYYY-MM-DD` (e.g. `2015-03-22`) |
 | **Services** | Comma-separated keys from the Services Reference sheet (e.g. `reading,spelling`) |
+| **Phone / Email** | Parent 1 contact info (`phone`, `email` columns) |
+| **Phone (P2) / Email (P2)** | Parent 2 contact info (`parent2_phone`, `parent2_email` columns) |
 | **Intake Complete / ROI Complete** | Type `YES` or `NO` (use the dropdown) |
 | **Per-Session Rate** | Leave blank to use your default rate from Settings |
 
@@ -255,9 +258,12 @@ Go to **Students** in the sidebar and click **+ Add Student**.
 |---|---|
 | **Full Name** | Used on invoices and PDF filenames |
 | **Initials** | Must match exactly what appears in your calendar appointment titles — case-sensitive |
-| **Parent 1 & 2 Name** | Printed in the "Bill To" block on invoices |
-| **Parent Address / City / State / Zip** | Printed on invoices |
-| **Email** | Required to enable the **Send via Email** button |
+| **Parent 1 Name / Parent 2 Name** | Displayed side-by-side at the top of the Parent / Guardian section |
+| **Phone Number (Parent 1 & 2)** | Contact phone for each parent — stored separately |
+| **Email Address (Parent 1 & 2)** | The billing parent's email is used for **Send via Email**. Parent 1 email is used by default unless Bill Invoices To is set to Parent 2. |
+| **Different address for Parent 2** | Check this box (under Parent 2 Email) to expand a separate address block for Parent 2 |
+| **Parent Address / City / State / Zip** | Parent 1 billing address — printed in the "Bill To" block on invoices |
+| **Bill Invoices To** | Choose Parent 1, Parent 2, or Other. Controls whose name, address, and email appear on the invoice and email. |
 | **Per-Session Rate ($)** | Leave blank to use the global rate from Settings |
 | **Services** | Check all applicable areas — internal record only |
 
@@ -266,7 +272,7 @@ Click **Save Student**.
 ### Tips
 
 - **Initials are case-sensitive.** Open a real calendar appointment to copy the initials exactly.
-- **Archive, don't delete** inactive students — their invoice history is preserved.
+- **Archive, don't delete** inactive students — their invoice history is preserved. Students with invoices cannot be deleted.
 - **Per-student rate** overrides the global rate only for that student.
 
 ---
@@ -318,7 +324,7 @@ Click **Invoice History** in the sidebar.
 | Action | Description |
 |---|---|
 | **Mark as Paid / ✓ Paid** | Toggles paid status. Shows a confirmation toast. |
-| **Send via Email** | Sends the PDF via Microsoft 365. Shows a success or error toast. |
+| **Send via Email** | Sends the PDF via Microsoft 365 to the billing parent's email (based on the **Bill Invoices To** setting on the student). Shows a success or error toast. |
 | **Save PDF** | Opens the PDF in your default viewer. |
 | **Open Folder** | Opens the folder in Windows Explorer. |
 | **Delete** | Removes the invoice record. Does **not** delete the PDF from disk. |
@@ -418,7 +424,10 @@ Your token may have expired. Go to **Settings → Microsoft 365** — if it show
 - Make sure the appointments fall within the selected month and year
 
 ### "Send via Email" is greyed out
-The student has no email address. Go to **Students → Edit** → add the parent email.
+The billing parent has no email address on file. Go to **Students → Edit** and add an email for whichever parent is selected under **Bill Invoices To** (Parent 1 Email, Parent 2 Email, or the custom contact's email).
+
+### Cannot delete a student
+Students with existing invoices are protected from deletion to preserve billing history. Use **Archive** instead — archived students are hidden from active lists but their invoices remain intact.
 
 ### Browser doesn't open automatically
 Open your browser and go to `http://127.0.0.1:5000`. Check the tray icon is visible.

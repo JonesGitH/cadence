@@ -571,6 +571,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--muted);
 }
 .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .3; }
+.empty-state svg.empty-icon { color: var(--muted); opacity: .35; margin-bottom: 12px; }
 .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .empty-state p  { font-size: 13px; }
 

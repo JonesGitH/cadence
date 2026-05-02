@@ -410,6 +410,22 @@ def save_storage():
 
 @app.route('/settings/save', methods=['POST'])
 def save_settings():
+    hourly_rate_raw = request.form.get('hourly_rate', '').strip()
+    if hourly_rate_raw:
+        try:
+            float(hourly_rate_raw)
+        except ValueError:
+            flash('Per-session rate must be a number.', 'error')
+            return redirect(url_for('settings'))
+
+    idle_raw = request.form.get('idle_timeout_minutes', '').strip()
+    if idle_raw:
+        try:
+            int(idle_raw)
+        except ValueError:
+            flash('Idle timeout must be a whole number of minutes.', 'error')
+            return redirect(url_for('settings'))
+
     for key in ('hourly_rate', 'business_name', 'business_title', 'business_email',
                 'business_phone', 'business_address', 'business_city',
                 'business_state', 'business_zip', 'venmo_handle', 'idle_timeout_minutes'):

@@ -30,10 +30,15 @@ def dashboard():
     conn.close()
 
     initials_map = {s['initials'].upper(): s['name'] for s in all_students}
+    calendar_error = None
     try:
         raw_today = get_today_items(get_enabled_calendars())
-    except Exception:
+    except RuntimeError as e:
         raw_today = []
+        calendar_error = str(e)
+    except Exception as e:
+        raw_today = []
+        log.warning('Calendar fetch failed: %s', e)
     now_hhmm = datetime.now().strftime('%H:%M')
     today_appointments = []
     for item in raw_today:
@@ -69,4 +74,5 @@ def dashboard():
         service_counts=sorted(services.items(), key=lambda x: -x[1]),
         services_map=SERVICES_MAP,
         today_appointments=today_appointments,
+        calendar_error=calendar_error,
     )

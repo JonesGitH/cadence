@@ -466,7 +466,26 @@ function togglePaid(invoiceId) {
       row.style.display = show ? '' : 'none';
       if (show) visible++;
     });
-    if (noRow) noRow.style.display = (visible === 0) ? '' : 'none';
+    if (noRow) {
+      if (visible === 0) {
+        var parts = [];
+        if (client) parts.push('<strong>' + client + '</strong>');
+        if (year)   parts.push('in <strong>' + year + '</strong>');
+        if (status) parts.push('with status <strong>' + status + '</strong>');
+        var td = noRow.querySelector('td');
+        if (td) td.innerHTML = 'No invoices found' + (parts.length ? ' for ' + parts.join(' ') : '') +
+          '. <a href="#" id="no-results-clear" style="color:var(--primary)">Clear filters</a>';
+        var clearLink = document.getElementById('no-results-clear');
+        if (clearLink) clearLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          filterClient.value = ''; filterYear.value = ''; filterStatus.value = '';
+          applyFilters();
+        });
+        noRow.style.display = '';
+      } else {
+        noRow.style.display = 'none';
+      }
+    }
     if (countEl) countEl.textContent = isFiltered() ? visible + ' of ' + allRows.length + ' invoices' : '';
     if (clearBtn) clearBtn.style.display = isFiltered() ? '' : 'none';
   }
@@ -667,16 +686,29 @@ window.Toast = (function() {
 
 /* ── Tabs ───────────────────────────────────────────────────────────────────── */
 (function() {
+  function activateTab(group, target) {
+    var tabs = group.querySelectorAll('[data-tab-target]');
+    tabs.forEach(function(t) { t.classList.toggle('active', t.getAttribute('data-tab-target') === target); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) {
+      p.classList.toggle('active', p.id === target);
+    });
+  }
+
   document.querySelectorAll('.tabs').forEach(function(group) {
     var tabs = group.querySelectorAll('[data-tab-target]');
     if (!tabs.length) return;
+
+    // Restore tab from URL hash on load
+    var hash = location.hash.replace('#', '');
+    if (hash && document.getElementById(hash)) {
+      activateTab(group, hash);
+    }
+
     tabs.forEach(function(tab) {
       tab.addEventListener('click', function() {
         var target = tab.getAttribute('data-tab-target');
-        tabs.forEach(function(t) { t.classList.toggle('active', t === tab); });
-        document.querySelectorAll('.tab-panel').forEach(function(p) {
-          p.classList.toggle('active', p.id === target);
-        });
+        activateTab(group, target);
+        history.replaceState(null, '', '#' + target);
       });
     });
   });

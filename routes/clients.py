@@ -31,6 +31,15 @@ def add_client():
         return render_template('student_form.html', student=d, services=SERVICES, grades=GRADES)
 
     conn = get_db()
+    dup = conn.execute(
+        'SELECT id FROM clients WHERE UPPER(initials) = ? AND active = 1',
+        (d['initials'],)
+    ).fetchone()
+    if dup:
+        conn.close()
+        flash(f'A student with initials "{d["initials"]}" already exists. Initials must be unique.', 'error')
+        return render_template('student_form.html', student=d, services=SERVICES, grades=GRADES)
+
     conn.execute('''
         INSERT INTO clients
             (name, initials, email, phone, school, grade, birthday, diagnosis,
@@ -85,6 +94,18 @@ def edit_client(client_id):
         return render_template('student_form.html', student=d, services=SERVICES, grades=GRADES)
 
     conn = get_db()
+    dup = conn.execute(
+        'SELECT id FROM clients WHERE UPPER(initials) = ? AND active = 1 AND id != ?',
+        (d['initials'], client_id)
+    ).fetchone()
+    if dup:
+        conn.close()
+        flash(f'A student with initials "{d["initials"]}" already exists. Initials must be unique.', 'error')
+        d['id'] = client_id
+        d['services_list'] = _parse_services(d.get('services'))
+        d['age'] = _calculate_age(d.get('birthday'))
+        return render_template('student_form.html', student=d, services=SERVICES, grades=GRADES)
+
     conn.execute('''
         UPDATE clients SET
             name=?, initials=?, email=?, phone=?, school=?, grade=?, birthday=?,
@@ -119,12 +140,15 @@ def edit_client(client_id):
 
 def _set_client_active(client_id, active, flash_template):
     conn = get_db()
+    client = conn.execute('SELECT name FROM clients WHERE id=?', (client_id,)).fetchone()
+    if not client:
+        conn.close()
+        flash('Student not found.', 'error')
+        return
     conn.execute('UPDATE clients SET active=? WHERE id=?', (active, client_id))
     conn.commit()
-    name = conn.execute('SELECT name FROM clients WHERE id=?', (client_id,)).fetchone()
     conn.close()
-    if name:
-        flash(flash_template.format(name=name['name']), 'success')
+    flash(flash_template.format(name=client['name']), 'success')
 
 
 @app.route('/clients/<int:client_id>/archive', methods=['POST'])

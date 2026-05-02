@@ -399,9 +399,9 @@
         </span>
         {% if pw_expires_in is not none %}
           {% if pw_expires_in < 0 %}
-            <span style="color:#b91c1c;font-size:13px;font-weight:600">&#9888; Password expired — please change it</span>
+            <span style="color:var(--danger);font-size:13px;font-weight:600">&#9888; Password expired — please change it</span>
           {% elif pw_expires_in <= 14 %}
-            <span style="color:#b45309;font-size:13px">&#9888; Expires in {{ pw_expires_in }} day{{ 's' if pw_expires_in != 1 }} — change soon</span>
+            <span style="color:var(--warning);font-size:13px">&#9888; Expires in {{ pw_expires_in }} day{{ 's' if pw_expires_in != 1 }} — change soon</span>
           {% else %}
             <span style="color:var(--muted);font-size:13px">Expires in {{ pw_expires_in }} days</span>
           {% endif %}

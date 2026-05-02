@@ -93,10 +93,10 @@
   </main>
 
   <!-- Delete confirmation modal -->
-  <div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal-overlay" id="delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
     <div class="modal" style="max-width:400px">
       <div class="modal-header">
-        <div class="modal-title">Confirm Delete</div>
+        <div class="modal-title" id="delete-confirm-title">Confirm Delete</div>
         <button class="modal-close" onclick="closeModal('delete-confirm-modal')" type="button">&times;</button>
       </div>
       <p id="delete-confirm-msg" style="margin:0 0 8px;color:var(--text)">Are you sure you want to delete this?</p>
